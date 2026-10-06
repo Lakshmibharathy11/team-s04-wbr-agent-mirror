@@ -37,3 +37,6 @@ athena-results/
 coverage/
 dist/
 build/
+# Local DuckDB database files (contain Olist data; must not be committed)
+*.duckdb
+*.duckdb.wal
