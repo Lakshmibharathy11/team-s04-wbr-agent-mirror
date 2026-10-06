@@ -33,15 +33,14 @@ This document records what was done, why, and how it was checked, so teammates c
 - A validation analysis linking late delivery to review scores
 - Grouping of small states and categories, with the statistical rationale
 - Metric definitions and business rules
-- The order-level fact table (`order_facts`) and the state-level summary table (`weekly_metrics`)
+- The order-level fact table (`order_facts`) and both summary tables (`weekly_metrics`, `weekly_category_metrics`)
 
 **Still pending at the time of writing:**
 
-- Locking the exact analysis window (start week and last complete week)
-- Running the category grouping and recording which categories are kept
-- Recording the reconciliation results for `order_facts` and `weekly_metrics` on the real data
-- Building the category-level table (`weekly_category_metrics`)
 - Exporting to Parquet, uploading to S3, and creating Athena tables
+- Confirming DuckDB and Athena return the same numbers
+- Recording the late-order count from `order_facts`
+- The dataset license wording for the README
 
 ## Dataset and source
 
@@ -83,12 +82,12 @@ We use the public [Olist Brazilian E-Commerce dataset](https://www.kaggle.com/da
 - `data/raw/`: original Olist CSVs, unchanged
 - `data/olist.duckdb`: local database holding raw and derived tables
 - `notebooks/`: exploration notebooks
-- `sql/`: `order_facts.sql`, `weekly_metrics.sql`
+- `sql/`: `order_facts.sql`, `weekly_metrics.sql`, `weekly_category_metrics.sql`
 - `docs/`: this document; `docs/Images/` holds its figures
 
 **Git rules agreed by the team:**
 
-- One branch per task (this work: `work/lakshmi-data-tools`), pull requests into `main`, another teammate reviews, squash merge.
+- One branch per task (this work: `work/Lakshmi-data-tools`, with a capital L; branch names are case-sensitive), pull requests into `main`, another teammate reviews, squash merge.
 - Never commit raw data, `.duckdb` files, `.env` files, or credentials.
 - `.gitignore` covers `data/raw/`, `*.duckdb`, `*.duckdb.wal`, and `.venv/`.
 
@@ -128,7 +127,7 @@ Guiding rule: **only clean columns we use, and never change the raw tables.** Fi
 | Empty review titles and comments | Many | Left as NULL; columns not used | Writing a comment is optional, so NULL is real information |
 | Delivered orders missing a delivery date or review | About 650, from the validation analysis | Excluded from delivery metrics | No date means late status and delivery time can't be calculated |
 | Zip code prefix loaded as a number | Leading zeros lost | Not used | Identifier-like columns should be text; noted for future use |
-| Sparse early weeks and incomplete final weeks | See [Time coverage](#time-coverage-and-analysis-window) | Analysis window (pending) | Thin weeks create false "changes" |
+| Sparse early weeks and incomplete final weeks | See [Time coverage](#time-coverage-and-analysis-window) | Excluded by the analysis window (2017-01-30 to 2018-08-13) | Thin weeks create false "changes" |
 
 **One subtle effect:** averaging multiple reviews can hide a 1-star review (a 1 and a 3 average to 2.0, which is not counted as 1-star). This affects only orders with several reviews.
 
@@ -167,7 +166,11 @@ Guiding rule: **only clean columns we use, and never change the raw tables.** Fi
 
 **Date range:** first order 2016-09-04 21:15:19, last order 2018-10-17 17:30:18.
 
-**Weekly order volume, read from the orders-per-week chart (approximate):**
+![Orders per week, September 2016 to October 2018: near zero in 2016, a ramp-up in January 2017, steady growth to mid-2018 with a Black Friday spike in November 2017, and a sudden drop after mid-August 2018](Images/orders_per_week.png)
+
+*Figure 1. Orders per week across the full dataset, used to choose the analysis window.*
+
+**What the chart shows (approximate):**
 
 - **2016:** nearly zero, apart from one small blip in early October, then almost nothing through December. Unusable.
 - **January–February 2017:** ramp-up from near zero to about 500 orders a week.
@@ -176,10 +179,25 @@ Guiding rule: **only clean columns we use, and never change the raw tables.** Fi
 - **Late December 2017 and mid-June 2018:** dips. December fits the holidays; the June cause is unknown, a candidate for an "unexplained" finding.
 - **Late August 2018 onward:** sudden fall to near zero. This is the end of data collection, not a business collapse.
 
-**Window decision (pending exact dates):**
+**Window decision: weeks starting 2017-01-30 through 2018-08-13, inclusive (81 weeks).**
 
-- **Start:** the first steady week, around late January or February 2017.
-- **End:** the last complete week before the late-August 2018 drop.
+The boundary weeks were read from weekly order counts:
+
+| Week starting | Orders | Decision |
+| --- | --- | --- |
+| 2017-01-02 to 2017-01-16 | 46, 80, 197 | Excluded: ramp-up |
+| 2017-01-23 | 354 | Excluded: just below the February level and still climbing |
+| **2017-01-30** | **467** | **Start:** first week inside the steady February range (379–548) |
+| 2018-07-23 to 2018-08-06 | 1,646 to 2,058 | Normal |
+| **2018-08-13** | **1,875** | **End:** last week in line with the weeks before it |
+| 2018-08-20 | 1,071 | Excluded: about half the normal level, data collection winding down |
+| 2018-08-27 onward | 130, then single digits | Excluded: clearly incomplete |
+
+**Why exclude 2017-01-23:** comparing it with the next week would show a 32% "increase" that is only the store still ramping up.
+
+**Why exclude 2018-08-20:** a half-empty week would look like a 43% revenue crash.
+
+In SQL: `WHERE week_start BETWEEN DATE '2017-01-30' AND DATE '2018-08-13'`.
 
 The window is applied when the tools query the data. `weekly_metrics` keeps all weeks, so the incomplete final weeks remain available as a real "incomplete data" failure case for the demo.
 
@@ -199,18 +217,37 @@ The window is applied when the tools query the data. `weekly_metrics` keeps all 
 
 **Confirmed by two more checks:**
 
-- **Natural break (elbow):** a clear gap between BA (median 38) and DF (median 24).
-- **Coverage:** the kept states hold about 84% of orders, so the breakdown still explains most of the business.
+- **Natural break (elbow):** a clear gap between SC and BA (median 41) and DF (median 25).
+- **Coverage:** the kept states hold about 84% of orders in the window (81,764 of 97,214), so the breakdown still explains most of the business.
 
-![Median weekly orders by customer state, with the 30-orders-per-week threshold: 7 states clear it and 20 merge into Other](Images/category_grouping.png)
+![Median weekly orders by customer state, with the 30-orders-per-week threshold: 7 states clear it and 20 merge into Other](Images/state_grouping.png)
 
-*Figure 1. Median weekly orders by customer state. Source: Olist orders joined to customers; window 2017-01-01 to 2018-09-01 (placeholder until the analysis window is locked).*
+*Figure 2. Median weekly orders by customer state, analysis window 2017-01-30 to 2018-08-13. Source: Olist orders joined to customers.*
 
-**Result for states:** SP, RJ, MG, RS, PR, SC, BA keep their own groups; the other 20 states form **Other**, which is large and stable as a combined group (about 16% of orders). That gives 8 state groups.
+**Result for states:** SP, RJ, MG, RS, PR, BA, SC keep their own groups; the other 20 states form **Other**, which is large and stable as a combined group (about 16% of orders). That gives 8 state groups. The grouping was first run on a placeholder window and re-run on the final window; the kept states did not change.
 
 **Caveat for rare-event rates such as late delivery %:** what matters is the number of *events*, not just orders. A common guideline is at least 10 events. At a late rate of about 7%, 30 orders contain only about 2 late orders, so one extra late order moves the rate from 6.7% to 10%. A state can therefore be large enough for revenue but too small to trust its weekly late %. This is handled at the flagging stage with a small-sample warning, not by the grouping.
 
-**Categories:** the same rule applies (median of at least 30 orders per week, counted as distinct orders), with **unknown always sent to Other.** An "unknown" category is not actionable for an analyst even if it were large. Results are pending; the original plan's "top 10" was a guess that the data will confirm or replace.
+**Categories:** the same rule applies (median of at least 30 orders per week, counted as distinct orders per category, final window), with **unknown always sent to Other**, since an "unknown" category is not actionable for an analyst even if it were large.
+
+**Result for categories: 14 kept, plus Other = 15 category groups.**
+
+| Category | Median weekly orders | Category | Median weekly orders |
+| --- | --- | --- | --- |
+| bed_bath_table | 114 | cool_stuff | 45 |
+| sports_leisure | 92 | toys | 41 |
+| health_beauty | 82 | garden_tools | 40 |
+| furniture_decor | 67 | auto | 36 |
+| computers_accessories | 66 | perfumery | 35 |
+| housewares | 65 | baby | 34 |
+| watches_gifts | 64 | | |
+| telephony | 48 | | |
+
+- **Natural break:** baby (34) to electronics and stationery (24), a gap of 10.
+- **Coverage:** about 76% of orders fall in the 14 kept categories, 24% in Other. Lower than for states because orders spread across about 70 categories, a longer tail.
+- **unknown:** median 14 per week, so it would fall into Other by the threshold anyway.
+- **Caveat:** Other is a mixed group, so findings about it are less actionable; the agent can still report them for an analyst to dig into.
+- The original plan's "top 10" was a guess; the data gave 14.
 
 **Unknown category handling:** products with no category are kept (labeled `unknown`) so revenue totals stay complete, then grouped into Other.
 
@@ -245,9 +282,9 @@ The window is applied when the tools query the data. `weekly_metrics` keeps all 
 
 The tables follow the **medallion architecture**: bronze (raw), silver (cleaned), gold (aggregated). The same pattern is also called staging → intermediate → marts in tools like dbt. `order_facts` is a **fact table**; the weekly tables are **aggregate tables**.
 
-![Data layers: raw tables feed order_facts, which feeds weekly_metrics and the planned weekly_category_metrics, which the agent tools query via Athena](Images/data_layers.png)
+![Data layers: raw tables feed order_facts, which feeds weekly_metrics and weekly_category_metrics, which the agent tools query via Athena](Images/data_layers.png)
 
-*Figure 2. Data layers. The dashed box is planned.*
+*Figure 3. Data layers. All three derived tables are built and reconciled.*
 
 **Why two steps instead of one big query:**
 
@@ -267,7 +304,7 @@ Built by `sql/order_facts.sql`, stored as a table in `data/olist.duckdb`.
 | week_start | DATE | Monday of the purchase week |
 | order_status | VARCHAR | Original status |
 | customer_state | VARCHAR | Original 2-letter state, kept so grouping can change later |
-| state_group | VARCHAR | SP, RJ, MG, RS, PR, SC, BA, or Other |
+| state_group | VARCHAR | SP, RJ, MG, RS, PR, BA, SC, or Other |
 | is_revenue_order | BOOLEAN | Paid, not canceled or unavailable |
 | is_canceled | BOOLEAN | Canceled or unavailable |
 | product_revenue | DOUBLE | Sum of item prices (0 if no items) |
@@ -300,6 +337,27 @@ Built by `sql/weekly_metrics.sql` from `order_facts`. Includes all weeks; the an
 | late_orders | BIGINT | Delivered late |
 | delivery_days_sum | BIGINT | Total delivery days |
 
+### weekly_category_metrics (gold): one row per week × category group × state group
+
+Built by `sql/weekly_category_metrics.sql` from `order_items`, the category lookup, and `order_facts`. Includes all weeks.
+
+| Column | Type | Meaning |
+| --- | --- | --- |
+| week_start | DATE | The week |
+| category_group | VARCHAR | One of the 14 kept categories, or Other |
+| state_group | VARCHAR | State group |
+| orders_with_category | BIGINT | Revenue orders containing at least one item from this category group |
+| category_revenue | DOUBLE | Sum of prices of this category group's items only |
+| items | BIGINT | Items from this category group |
+| freight | DOUBLE | Shipping on this category group's items |
+| canceled_orders | BIGINT | Canceled orders containing this category group |
+| review_count, review_sum, one_star_count | BIGINT, DOUBLE, BIGINT | Reviews of revenue orders containing this category group |
+| delivered_orders, late_orders, delivery_days_sum | BIGINT | Deliveries of revenue orders containing this category group |
+
+**How it is built:** each order gets one row per category group containing only that group's items, so category revenue is exact. Two small categories in the same order merge into a single Other row, so Other does not double count. Order-level fields (week, state, revenue status, review, delivery) come from `order_facts`, so definitions match the other tables.
+
+**Additivity:** category revenue adds up exactly to total revenue. Orders, reviews, and deliveries do not, because an order with items from two category groups counts in both (736 orders, about 0.75%). Orders without items cannot appear here, so cancellation totals come from `weekly_metrics`.
+
 ### Derived KPIs, calculated by the tools
 
 | KPI | Formula |
@@ -317,7 +375,7 @@ Built by `sql/weekly_metrics.sql` from `order_facts`. Includes all weeks; the an
 
 - **Store sums and counts, not averages or percentages.** Averages cannot be averaged across groups; sums can be added at any level, and the ratio computed afterwards.
 - **Cast counts to BIGINT.** DuckDB sums integers into HUGEINT, which Athena cannot read reliably from Parquet.
-- **Category analysis uses its own table (planned).** `weekly_category_metrics` will be built at item level so each category gets exactly its own items' revenue. Category revenue adds up to the total; orders, reviews, and late deliveries do not, because a mixed-category order counts in each of its categories. Totals therefore always come from `weekly_metrics`.
+- **Totals come from `weekly_metrics`; category comparisons come from `weekly_category_metrics`.** Category revenue adds up to the total, but orders, reviews, and late deliveries do not, because a mixed-category order counts in each of its category groups.
 - **Planned S3 layout:** `raw/olist/` (original CSVs), `curated/` (order_facts and weekly tables as Parquet; the agent reads only the weekly tables), `test/` (synthetic copies for evaluation), `athena-results/`. No partitioning: the weekly tables are small (hundreds to low thousands of rows).
 
 ## Verification
@@ -339,13 +397,20 @@ Built by `sql/weekly_metrics.sql` from `order_facts`. Includes all weeks; the an
 
 **2. Reconciliation checks on the real data.**
 
-| Check | Expected | Status |
+| Check | Result | Status |
 | --- | --- | --- |
-| order_facts rows = distinct order_ids | 99,441 = 99,441 (no join duplication) | Passed; record the numbers |
-| Revenue of revenue orders | Slightly below the 13.59 million BRL of all item prices, since canceled orders are excluded | Passed; record the number |
-| Late share of delivered orders | About 6.5–7%, consistent with the validation analysis | Passed; record the number |
-| weekly_metrics orders and revenue = order_facts totals | Exact match | To run |
-| weekly_metrics row count | Roughly 700–850 (weeks × 8 state groups, minus empty combinations) | To run |
+| order_facts rows = distinct order_ids | 99,441 = 99,441 (no join duplication) | Passed |
+| Revenue orders in order_facts | 98,188 of 99,441; the other 1,253 are canceled, unavailable, or never paid | Passed |
+| Revenue of revenue orders | 13,492,730 BRL, about 98,900 below the 13.59 million of all item prices (excluded orders' items) | Passed |
+| weekly_metrics orders and revenue = order_facts totals | 98,188 = 98,188; 13,492,730 = 13,492,730 | Passed |
+| weekly_metrics row count | 730 | Passed |
+| weekly_category_metrics category groups | 15 (14 categories + Other) | Passed |
+| weekly_category_metrics revenue = weekly_metrics revenue | 13,492,730 = 13,492,730 | Passed |
+| weekly_category_metrics orders vs total orders | 98,924 vs 98,188: 736 orders (about 0.75%) span two category groups and count in each, as designed | Passed |
+| weekly_category_metrics row count | 9,467 | Passed |
+| Late share of delivered orders | About 6.5–7%, consistent with the validation analysis | Passed; record the count |
+
+The category-table SQL was also tested on synthetic cases: a two-category order (revenue split exactly), a two-small-category order (one Other row), a missing category, an untranslated category, and a canceled order.
 
 **Why record the numbers:** they are the baseline. If a later change alters them unexpectedly, the difference shows exactly what broke.
 
@@ -370,19 +435,19 @@ Grouping decides which groups are big enough to look at. Flagging decides whethe
 
 **Open decisions:**
 
-- [ ] Exact analysis window: first steady week and last complete week
-- [ ] Category grouping result: which categories keep their own group
+- [x] Exact analysis window: 2017-01-30 to 2018-08-13
+- [x] Category grouping: 14 categories plus Other
 - [ ] Multiple reviews per order: keep averaging, or use the latest review (affects 1-star counts slightly)
 - [ ] Dataset license wording for the README
 
 **Next steps:**
 
-- [ ] Run and record the `weekly_metrics` reconciliation checks
-- [ ] Record the `order_facts` check numbers in this document
-- [ ] Build `weekly_category_metrics` at item level
+- [x] Run and record the `weekly_metrics` reconciliation checks
+- [x] Build `weekly_category_metrics` at item level
+- [ ] Record the late-order count from `order_facts`
 - [ ] Export the curated tables to Parquet, upload to S3, create Athena tables (following Franklyn's architecture)
 - [ ] Confirm DuckDB and Athena return the same numbers
 - [ ] Tell the team about the two-table design, since it changes the tool data shapes
-- [ ] Stage 2: the three query tools, small-sample warnings, and z-score flagging
+- [ ] Stage 2: planted scenarios and answer keys, the three query tools, small-sample warnings, and z-score flagging
 
 **Team deadlines:** internal finish Thursday, October 8, 11:59 AM PT; submission Sunday, October 11 (confirm AM or PM against the organizers' latest message).
