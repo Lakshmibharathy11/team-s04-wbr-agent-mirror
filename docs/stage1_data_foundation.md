@@ -1,6 +1,24 @@
 # WBR Agent: Stage 1 Data Foundation
 
-Oct 6, 2026 · @L
+**Last updated:** October 6, 2026 · **Author:** Lakshmi Bharathy Kumar (L)
+
+## Contents
+
+1. [Purpose and scope](#purpose-and-scope)
+2. [Dataset and source](#dataset-and-source)
+3. [Environment and workflow](#environment-and-workflow)
+4. [Table-by-table review](#table-by-table-review)
+5. [Data quality findings](#data-quality-findings)
+6. [Validation: late delivery and review scores](#validation-late-delivery-and-review-scores)
+7. [Time coverage and analysis window](#time-coverage-and-analysis-window)
+8. [Grouping small states and categories](#grouping-small-states-and-categories)
+9. [Metric definitions and business rules](#metric-definitions-and-business-rules)
+10. [Data model](#data-model)
+11. [Verification](#verification)
+12. [Planned statistical approach for flagging changes](#planned-statistical-approach-for-flagging-changes)
+13. [Open decisions and next steps](#open-decisions-and-next-steps)
+
+---
 
 ## Purpose and scope
 
@@ -29,15 +47,15 @@ This document records what was done, why, and how it was checked, so teammates c
 
 We use the public [Olist Brazilian E-Commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce): 99,441 orders placed between September 2016 and October 2018 on a Brazilian online marketplace, published as 9 linked CSV files.
 
-**Why this dataset:** it is the only common public e-commerce dataset we know of that links orders, item prices, delivery dates, and customer reviews. That chain (purchase → delivery → review) is what lets the agent investigate why a metric changed, not just that it changed. Alternatives considered lacked delivery data (UCI Online Retail II), order and delivery operations (Amazon review datasets), prices and real dates (Instacart), or delivery and reviews (Google GA4 sample).
+**Why this dataset:** it is the only common public e-commerce dataset we know of that links orders, item prices, delivery dates, and customer reviews. That chain (purchase → delivery → review) is what lets the agent investigate *why* a metric changed, not just *that* it changed. Alternatives considered lacked delivery data (UCI Online Retail II), order and delivery operations (Amazon review datasets), prices and real dates (Instacart), or delivery and reviews (Google GA4 sample).
 
-**Tables used (6):** orders, order\_items, order\_reviews, customers, products, product\_category\_name\_translation.
+**Tables used (6):** `orders`, `order_items`, `order_reviews`, `customers`, `products`, `product_category_name_translation`.
 
 **Tables not used (3):**
 
-- **order\_payments:** payment method and amount; not needed for the three questions, since revenue uses item prices.
-- **sellers:** seller location; seller-level analysis is out of scope.
-- **geolocation:** zip-code coordinates; the largest file and not needed, since we break down by state.
+- **`order_payments`:** payment method and amount; not needed for the three questions, since revenue uses item prices.
+- **`sellers`:** seller location; seller-level analysis is out of scope.
+- **`geolocation`:** zip-code coordinates; the largest file and not needed, since we break down by state.
 
 **Known limitations:**
 
@@ -66,6 +84,7 @@ We use the public [Olist Brazilian E-Commerce dataset](https://www.kaggle.com/da
 - `data/olist.duckdb`: local database holding raw and derived tables
 - `notebooks/`: exploration notebooks
 - `sql/`: `order_facts.sql`, `weekly_metrics.sql`
+- `docs/`: this document; `docs/Images/` holds its figures
 
 **Git rules agreed by the team:**
 
@@ -81,12 +100,12 @@ The **grain** of a table is what one row represents. Knowing the grain is what p
 
 | Table | Rows | Grain (one row =) | Key columns used | Notes |
 | --- | --- | --- | --- | --- |
-| orders | 99,441 | One order | order\_id, customer\_id, order\_status, purchase, approval, delivery, and estimated delivery timestamps | Central table; dates are proper timestamps |
-| order\_items | 112,650 | One item in an order | order\_id, order\_item\_id, product\_id, price, freight\_value | About 1.13 items per order; no quantity column, so repeated products appear as separate rows |
-| reviews | 99,224 | One review | order\_id, review\_score | Reviews are at order level, not item level; some orders have none, a few have several |
-| customers | 99,441 | One customer record per order | customer\_id, customer\_state | customer\_id is new for every order; the real person is customer\_unique\_id |
-| products | 32,951 | One product | product\_id, product\_category\_name | No product names; category is the most descriptive field |
-| category\_translation | 71 | One category | Portuguese and English names | Two categories in products have no translation |
+| `orders` | 99,441 | One order | order_id, customer_id, order_status, purchase, approval, delivery, and estimated delivery timestamps | Central table; dates are proper timestamps |
+| `order_items` | 112,650 | One item in an order | order_id, order_item_id, product_id, price, freight_value | About 1.13 items per order; no quantity column, so repeated products appear as separate rows |
+| `reviews` | 99,224 | One review | order_id, review_score | Reviews are at order level, not item level; some orders have none, a few have several |
+| `customers` | 99,441 | One customer record per order | customer_id, customer_state | customer_id is new for every order; the real person is customer_unique_id |
+| `products` | 32,951 | One product | product_id, product_category_name | No product names; category is the most descriptive field |
+| `category_translation` | 71 | One category | Portuguese and English names | Two categories in products have no translation |
 
 **Column decisions worth knowing:**
 
@@ -94,7 +113,7 @@ The **grain** of a table is what one row represents. Knowing the grain is what p
 - **Timestamps stay in standard format** (`2017-10-02 10:56:33`). Display formats like m/d/y are applied only in reports; as text they break sorting and date math.
 - **Prices are DOUBLE** (decimal numbers). Tiny floating-point rounding is expected; values are rounded to 2 decimals for display.
 - **Original column spellings are kept,** including Olist's misspelled `product_name_lenght`, so code matches the source.
-- **customer\_id vs customer\_unique\_id:** joins use customer\_id (one per order). Counting distinct people would need customer\_unique\_id; none of the three questions requires it.
+- **customer_id vs customer_unique_id:** joins use customer_id (one per order). Counting distinct people would need customer_unique_id; none of the three questions requires it.
 
 ## Data quality findings
 
@@ -109,7 +128,7 @@ Guiding rule: **only clean columns we use, and never change the raw tables.** Fi
 | Empty review titles and comments | Many | Left as NULL; columns not used | Writing a comment is optional, so NULL is real information |
 | Delivered orders missing a delivery date or review | About 650, from the validation analysis | Excluded from delivery metrics | No date means late status and delivery time can't be calculated |
 | Zip code prefix loaded as a number | Leading zeros lost | Not used | Identifier-like columns should be text; noted for future use |
-| Sparse early weeks and incomplete final weeks | See Time coverage | Analysis window (pending) | Thin weeks create false "changes" |
+| Sparse early weeks and incomplete final weeks | See [Time coverage](#time-coverage-and-analysis-window) | Analysis window (pending) | Thin weeks create false "changes" |
 
 **One subtle effect:** averaging multiple reviews can hide a 1-star review (a 1 and a 3 average to 2.0, which is not counted as 1-star). This affects only orders with several reviews.
 
@@ -183,7 +202,9 @@ The window is applied when the tools query the data. `weekly_metrics` keeps all 
 - **Natural break (elbow):** a clear gap between BA (median 38) and DF (median 24).
 - **Coverage:** the kept states hold about 84% of orders, so the breakdown still explains most of the business.
 
-&#91;embedded content: Olist orders joined to customers · query results shared in chat · window 2017-01-01 to 2018-09-01 (placeholder)\]
+![Median weekly orders by customer state, with the 30-orders-per-week threshold: 7 states clear it and 20 merge into Other](Images/category_grouping.png)
+
+*Figure 1. Median weekly orders by customer state. Source: Olist orders joined to customers; window 2017-01-01 to 2018-09-01 (placeholder until the analysis window is locked).*
 
 **Result for states:** SP, RJ, MG, RS, PR, SC, BA keep their own groups; the other 20 states form **Other**, which is large and stable as a combined group (about 16% of orders). That gives 8 state groups.
 
@@ -204,7 +225,7 @@ The window is applied when the tools query the data. `weekly_metrics` keeps all 
 | Canceled order | Status `canceled` or `unavailable` | Lets the agent check whether a revenue drop came from cancellations |
 | Product revenue | Sum of item prices for revenue orders; excludes shipping | Measures product spending; shipping changes would otherwise look like sales changes. Freight is kept in its own column |
 | Delivered | Status `delivered` with an actual delivery date | Only these have a delivery date to measure |
-| Late | Delivered, and actual delivery date after estimated date (dates, not timestamps) | The estimate has no time of day; see Validation |
+| Late | Delivered, and actual delivery date after estimated date (dates, not timestamps) | The estimate has no time of day; see [Validation](#validation-late-delivery-and-review-scores) |
 | Delivery days | Days from purchase date to delivery date | Shows whether delays are spreading or worsening |
 | Review score | One score per order, averaging multiple reviews | Prevents double counting |
 
@@ -224,7 +245,9 @@ The window is applied when the tools query the data. `weekly_metrics` keeps all 
 
 The tables follow the **medallion architecture**: bronze (raw), silver (cleaned), gold (aggregated). The same pattern is also called staging → intermediate → marts in tools like dbt. `order_facts` is a **fact table**; the weekly tables are **aggregate tables**.
 
-&#91;embedded content: Data layers · dashed box = planned\]
+![Data layers: raw tables feed order_facts, which feeds weekly_metrics and the planned weekly_category_metrics, which the agent tools query via Athena](Images/data_layers.png)
+
+*Figure 2. Data layers. The dashed box is planned.*
 
 **Why two steps instead of one big query:**
 
@@ -233,69 +256,69 @@ The tables follow the **medallion architecture**: bronze (raw), silver (cleaned)
 3. **Reused.** Both weekly tables read the same definitions, so they can't disagree.
 4. **Traceable.** Any number the agent reports can be traced to the exact orders behind it.
 
-### order\_facts (silver): one row per order
+### order_facts (silver): one row per order
 
 Built by `sql/order_facts.sql`, stored as a table in `data/olist.duckdb`.
 
 | Column | Type | Meaning |
 | --- | --- | --- |
-| order\_id | VARCHAR | The order |
-| purchase\_ts | TIMESTAMP | When the order was placed |
-| week\_start | DATE | Monday of the purchase week |
-| order\_status | VARCHAR | Original status |
-| customer\_state | VARCHAR | Original 2-letter state, kept so grouping can change later |
-| state\_group | VARCHAR | SP, RJ, MG, RS, PR, SC, BA, or Other |
-| is\_revenue\_order | BOOLEAN | Paid, not canceled or unavailable |
-| is\_canceled | BOOLEAN | Canceled or unavailable |
-| product\_revenue | DOUBLE | Sum of item prices (0 if no items) |
+| order_id | VARCHAR | The order |
+| purchase_ts | TIMESTAMP | When the order was placed |
+| week_start | DATE | Monday of the purchase week |
+| order_status | VARCHAR | Original status |
+| customer_state | VARCHAR | Original 2-letter state, kept so grouping can change later |
+| state_group | VARCHAR | SP, RJ, MG, RS, PR, SC, BA, or Other |
+| is_revenue_order | BOOLEAN | Paid, not canceled or unavailable |
+| is_canceled | BOOLEAN | Canceled or unavailable |
+| product_revenue | DOUBLE | Sum of item prices (0 if no items) |
 | items | BIGINT | Number of items (0 if none) |
 | freight | DOUBLE | Sum of shipping costs |
-| review\_score | DOUBLE | One score per order; NULL if no review |
-| is\_delivered | BOOLEAN | Delivered with a delivery date |
-| is\_late | BOOLEAN | Late; NULL if not delivered |
-| delivery\_days | BIGINT | Purchase to delivery in days; NULL if not delivered |
+| review_score | DOUBLE | One score per order; NULL if no review |
+| is_delivered | BOOLEAN | Delivered with a delivery date |
+| is_late | BOOLEAN | Late; NULL if not delivered |
+| delivery_days | BIGINT | Purchase to delivery in days; NULL if not delivered |
 
 **Techniques used:** pre-aggregating items and reviews in CTEs before joining (prevents fan-out), `LEFT JOIN` so orders without items or reviews are kept, `COALESCE` for zero defaults.
 
-### weekly\_metrics (gold): one row per week × state group
+### weekly_metrics (gold): one row per week × state group
 
 Built by `sql/weekly_metrics.sql` from `order_facts`. Includes all weeks; the analysis window is applied by the tools.
 
 | Column | Type | Meaning |
 | --- | --- | --- |
-| week\_start | DATE | The week |
-| state\_group | VARCHAR | State group |
+| week_start | DATE | The week |
+| state_group | VARCHAR | State group |
 | orders | BIGINT | Revenue orders |
-| product\_revenue | DOUBLE | Sum of item prices of revenue orders |
+| product_revenue | DOUBLE | Sum of item prices of revenue orders |
 | items | BIGINT | Items in revenue orders |
 | freight | DOUBLE | Shipping on revenue orders |
-| canceled\_orders | BIGINT | Canceled or unavailable orders |
-| review\_count | BIGINT | Revenue orders with a review |
-| review\_sum | DOUBLE | Sum of review scores |
-| one\_star\_count | BIGINT | Revenue orders scored 1 |
-| delivered\_orders | BIGINT | Revenue orders delivered |
-| late\_orders | BIGINT | Delivered late |
-| delivery\_days\_sum | BIGINT | Total delivery days |
+| canceled_orders | BIGINT | Canceled or unavailable orders |
+| review_count | BIGINT | Revenue orders with a review |
+| review_sum | DOUBLE | Sum of review scores |
+| one_star_count | BIGINT | Revenue orders scored 1 |
+| delivered_orders | BIGINT | Revenue orders delivered |
+| late_orders | BIGINT | Delivered late |
+| delivery_days_sum | BIGINT | Total delivery days |
 
 ### Derived KPIs, calculated by the tools
 
 | KPI | Formula |
 | --- | --- |
-| Average order value | product\_revenue ÷ orders |
+| Average order value | product_revenue ÷ orders |
 | Items per order | items ÷ orders |
-| Average item price | product\_revenue ÷ items |
-| Cancellation rate | canceled\_orders ÷ (orders + canceled\_orders) |
-| Average review score | review\_sum ÷ review\_count |
-| % 1-star | one\_star\_count ÷ review\_count |
-| Late delivery % | late\_orders ÷ delivered\_orders |
-| Average delivery days | delivery\_days\_sum ÷ delivered\_orders |
+| Average item price | product_revenue ÷ items |
+| Cancellation rate | canceled_orders ÷ (orders + canceled_orders) |
+| Average review score | review_sum ÷ review_count |
+| % 1-star | one_star_count ÷ review_count |
+| Late delivery % | late_orders ÷ delivered_orders |
+| Average delivery days | delivery_days_sum ÷ delivered_orders |
 
 ### Design rules
 
 - **Store sums and counts, not averages or percentages.** Averages cannot be averaged across groups; sums can be added at any level, and the ratio computed afterwards.
 - **Cast counts to BIGINT.** DuckDB sums integers into HUGEINT, which Athena cannot read reliably from Parquet.
 - **Category analysis uses its own table (planned).** `weekly_category_metrics` will be built at item level so each category gets exactly its own items' revenue. Category revenue adds up to the total; orders, reviews, and late deliveries do not, because a mixed-category order counts in each of its categories. Totals therefore always come from `weekly_metrics`.
-- **Planned S3 layout:** `raw/olist/` (original CSVs), `curated/` (order\_facts and weekly tables as Parquet, the agent reads only the weekly tables), `test/` (synthetic copies for evaluation), `athena-results/`. No partitioning: the weekly tables are small (hundreds to low thousands of rows).
+- **Planned S3 layout:** `raw/olist/` (original CSVs), `curated/` (order_facts and weekly tables as Parquet; the agent reads only the weekly tables), `test/` (synthetic copies for evaluation), `athena-results/`. No partitioning: the weekly tables are small (hundreds to low thousands of rows).
 
 ## Verification
 
@@ -312,17 +335,17 @@ Built by `sql/weekly_metrics.sql` from `order_facts`. Includes all weeks; the an
 | O7 | Unavailable | Canceled |
 | O8 | Status delivered, no delivery date | Revenue; excluded from delivery metrics |
 
-**Issues the test caught and fixed:** HUGEINT sums (cast to BIGINT for Athena), NULL sums for empty groups (now 0 via COALESCE), and the averaged-review effect on 1-star counts (documented).
+**Issues the test caught and fixed:** HUGEINT sums (cast to BIGINT for Athena), NULL sums for empty groups (now 0 via `COALESCE`), and the averaged-review effect on 1-star counts (documented).
 
 **2. Reconciliation checks on the real data.**
 
 | Check | Expected | Status |
 | --- | --- | --- |
-| order\_facts rows = distinct order\_ids | 99,441 = 99,441 (no join duplication) | Passed; record the numbers |
+| order_facts rows = distinct order_ids | 99,441 = 99,441 (no join duplication) | Passed; record the numbers |
 | Revenue of revenue orders | Slightly below the 13.59 million BRL of all item prices, since canceled orders are excluded | Passed; record the number |
 | Late share of delivered orders | About 6.5–7%, consistent with the validation analysis | Passed; record the number |
-| weekly\_metrics orders and revenue = order\_facts totals | Exact match | To run |
-| weekly\_metrics row count | Roughly 700–850 (weeks × 8 state groups, minus empty combinations) | To run |
+| weekly_metrics orders and revenue = order_facts totals | Exact match | To run |
+| weekly_metrics row count | Roughly 700–850 (weeks × 8 state groups, minus empty combinations) | To run |
 
 **Why record the numbers:** they are the baseline. If a later change alters them unexpectedly, the difference shows exactly what broke.
 
