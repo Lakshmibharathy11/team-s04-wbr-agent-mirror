@@ -1,0 +1,76 @@
+"""Strands tool wrappers around the query tools.
+
+Each wrapper calls the plain function in tools/wbr_tools.py, records the full
+envelope in the run's evidence log, and returns a concise view to the model.
+"""
+
+from strands import tool
+
+from agent.run_context import RunContext
+from agent.views import concise_view
+from tools import wbr_tools
+
+
+def make_tools(ctx: RunContext) -> list:
+    """Build the three tools bound to one run's context."""
+
+    def _run(name: str, fn, args: dict) -> dict:
+        envelope = fn(**args)
+        ctx.record(name, args, envelope)
+        return concise_view(envelope)
+
+    @tool
+    def get_weekly_metric(metric: str, week: str, state: str | None = None,
+                          category: str | None = None) -> dict:
+        """Check one metric for one week vs the previous week, and whether the change is unusual.
+
+        Use first, to DETECT whether something changed (single-metric threshold |z| >= 2).
+
+        Args:
+            metric: One of product_revenue, orders, items, avg_order_value, items_per_order,
+                avg_item_price, avg_review_score, one_star_pct, late_delivery_pct,
+                avg_delivery_days, cancellation_rate (cancellation_rate: no category filter).
+            week: Monday of the week, e.g. 2018-06-04.
+            state: Optional state group: SP, RJ, MG, RS, PR, BA, SC, Other.
+            category: Optional category group, e.g. health_beauty, or Other.
+        """
+        return _run("get_weekly_metric", wbr_tools.get_weekly_metric,
+                    {"metric": metric, "week": week, "state": state, "category": category})
+
+    @tool
+    def get_breakdown(metric: str, week: str, dimension: str, state: str | None = None,
+                      category: str | None = None) -> dict:
+        """Split one metric by state or category to ATTRIBUTE a change: where did it happen?
+
+        Groups are sorted biggest movers first. For product_revenue, orders, and items,
+        share_of_total_change_pct shows each group's share of the total change.
+        Use rank and share to locate a detected change; a group's own is_unusual uses a
+        stricter threshold (|z| >= 3) because many groups are tested at once.
+
+        Args:
+            metric: Same metrics as get_weekly_metric.
+            week: Monday of the week, e.g. 2018-06-04.
+            dimension: "state" or "category".
+            state: Optional state filter (only when dimension is "category").
+            category: Optional category filter (only when dimension is "state").
+        """
+        return _run("get_breakdown", wbr_tools.get_breakdown,
+                    {"metric": metric, "week": week, "dimension": dimension,
+                     "state": state, "category": category})
+
+    @tool
+    def get_delivery_signals(week: str, state: str | None = None,
+                             category: str | None = None) -> dict:
+        """Late delivery % and average delivery days for a slice, vs the previous week.
+
+        Use to check what ELSE changed in the same place. Shows association only, never cause.
+
+        Args:
+            week: Monday of the week, e.g. 2018-06-04.
+            state: Optional state group.
+            category: Optional category group.
+        """
+        return _run("get_delivery_signals", wbr_tools.get_delivery_signals,
+                    {"week": week, "state": state, "category": category})
+
+    return [get_weekly_metric, get_breakdown, get_delivery_signals]
