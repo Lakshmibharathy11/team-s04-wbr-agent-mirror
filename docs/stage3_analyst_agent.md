@@ -124,7 +124,7 @@ If a change is not unusual, it is reported as within the normal range. If no gro
 
 **Other fields:**
 - **`unavailable`:** what could not be checked. Code adds every failed tool call, even if the model forgot.
-- **`draft_status`:** `PARTIAL` if anything is unavailable or the week is incomplete; otherwise `COMPLETE`.
+- **`draft_status`:** `PARTIAL` if anything is unavailable, the week is incomplete, or a result had missing or invalid data (for example, a state missing from a total); otherwise `COMPLETE`.
 - **`precheck_issues`:** problems found by code, for the verifier. Code flags but does not remove claims; removal is the verifier's decision.
 - **`transcript`:** the full sequence of steps, for debugging and for reading failed evaluations.
 
@@ -212,7 +212,7 @@ The result is saved to `runs/<week>_<time>.json`. Keep `runs/` out of Git.
 - [ ] **Model choice:** which Bedrock models are enabled in us-east-2 (asked Franklyn)
 - [ ] **Runner interface:** confirm `run_analyst(week)` and the returned fields with Franklyn
 - [ ] **Live runs:** run each golden scenario 3–5 times on Bedrock and report how often it succeeds (agents are not deterministic)
-- [ ] **Agent-level grader:** score reports against the answer keys automatically
+- [x] **Agent-level grader:** see `docs/agent_evaluation.md`
 - [ ] **Confidence rule:** confirm with the team
 - [ ] **Observability:** optionally send traces to AgentCore Observability (OpenTelemetry)
 - [ ] **`runs/` folder:** add to `.gitignore`

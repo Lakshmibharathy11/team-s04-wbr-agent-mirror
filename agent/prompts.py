@@ -26,6 +26,7 @@ Rules:
 - When a located change has no supporting signal, use claim_type unexplained.
 - When a result has status error, report no value from it and add it to unavailable.
 - When a result has warnings (e.g. SMALL_SAMPLE, INCOMPLETE_WEEK), mention the limitation in the claim.
+- Refer to states and categories by the names the tools use (for example SP, health_beauty, Other).
 - Do not repeat a call you already made; reuse its request_id.
 - Finish with two or three actionable questions for the analyst."""
 

@@ -94,7 +94,10 @@ def finalize(draft, ctx) -> dict:
             if note not in unavailable:
                 unavailable.append(note)
 
+    # PARTIAL when anything failed, the week is incomplete, or a result had missing/invalid data
+    data_gap = any(c["status"] == "partial" and {"NO_DATA", "INVALID_DATA"} & set(c["warnings"])
+                   for c in ctx.calls)
     incomplete = any("INCOMPLETE_WEEK" in c["warnings"] for c in ctx.calls)
-    draft_status = "PARTIAL" if (unavailable or incomplete) else "COMPLETE"
+    draft_status = "PARTIAL" if (unavailable or incomplete or data_gap) else "COMPLETE"
     return {"claims": claims, "actionable_questions": list(draft.actionable_questions),
             "unavailable": unavailable, "draft_status": draft_status, "precheck_issues": issues}
