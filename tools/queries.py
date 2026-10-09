@@ -10,6 +10,14 @@ from datetime import date
 from tools import config
 
 
+def physical_table(table: str) -> str:
+    """The real table name to query: the logical name plus the configured prefix
+    (e.g. golden_weekly_metrics on Athena). Only names from config are allowed."""
+    if table not in config.TABLES:
+        raise ValueError(f"Unknown table: {table}")
+    return f"{config.TABLE_PREFIX}{table}"
+
+
 def resolve_column(table: str, name: str) -> str:
     """Map the placeholders 'revenue' and 'orders' to each table's real column name."""
     return config.TABLES[table].get(name, name)
@@ -72,7 +80,7 @@ def weekly_series_sql(table: str, columns: list[str], start: date, end: date,
         raise ValueError(f"Group-by not allowed: {group_by}")
     sql = (
         f"SELECT {group_cols}, {select_cols} "
-        f"FROM {table} "
+        f"FROM {physical_table(table)} "
         f"WHERE {' AND '.join(where)} "
         f"GROUP BY {group_cols} "
         f"ORDER BY {group_cols}"

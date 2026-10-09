@@ -1,0 +1,2369 @@
+{
+  "summary": {
+    "run_at": "2026-10-09T17:38:40+00:00",
+    "cases": 13,
+    "matched": 13,
+    "athena_attempts": 11,
+    "athena_succeeded": 11,
+    "bytes_scanned": 636489,
+    "estimated_cost_usd": 0.000525,
+    "athena_engine_ms": 5175,
+    "elapsed_seconds": 98.3,
+    "cap": 22
+  },
+  "results": [
+    {
+      "case": {
+        "id": "R1",
+        "data": "source",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2018-03-12"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "current": 218291.17,
+          "previous": 227113.15,
+          "change": -3.88,
+          "change_type": "pct",
+          "current_base": 1589,
+          "previous_base": 1633,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": 5.56,
+            "spread_change": 8.1
+          },
+          "z_score": -1.17,
+          "z_threshold": 2.0,
+          "is_unusual": false
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "current": 218291.17,
+          "previous": 227113.15,
+          "change": -3.88,
+          "change_type": "pct",
+          "current_base": 1589,
+          "previous_base": 1633,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": 5.56,
+            "spread_change": 8.1
+          },
+          "z_score": -1.17,
+          "z_threshold": 2.0,
+          "is_unusual": false
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "d3eec137-e224-4887-bc2d-a1d3b8212f8d",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28744,
+          "engine_ms": 514
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "R2",
+        "data": "source",
+        "tool": "get_breakdown",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2018-03-12",
+          "dimension": "category"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "dimension": "category",
+          "groups": [
+            {
+              "group": "housewares",
+              "current": 6205.94,
+              "previous": 10886.92,
+              "change": -43.0,
+              "change_type": "pct",
+              "current_base": 73,
+              "previous_base": 85,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -1.84,
+                "spread_change": 6.78
+              },
+              "z_score": -6.07,
+              "z_threshold": 3.0,
+              "is_unusual": true,
+              "warnings": [],
+              "absolute_change": -4680.98,
+              "share_of_total_change_pct": 53.06
+            },
+            {
+              "group": "auto",
+              "current": 12891.09,
+              "previous": 9461.36,
+              "change": 36.25,
+              "change_type": "pct",
+              "current_base": 78,
+              "previous_base": 63,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -8.93,
+                "spread_change": 27.19
+              },
+              "z_score": 1.66,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 3429.73,
+              "share_of_total_change_pct": -38.88
+            },
+            {
+              "group": "bed_bath_table",
+              "current": 16496.04,
+              "previous": 13595.62,
+              "change": 21.33,
+              "change_type": "pct",
+              "current_base": 137,
+              "previous_base": 148,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 5.36,
+                "spread_change": 10.29
+              },
+              "z_score": 1.55,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 2900.42,
+              "share_of_total_change_pct": -32.88
+            },
+            {
+              "group": "sports_leisure",
+              "current": 19889.37,
+              "previous": 24923.75,
+              "change": -20.2,
+              "change_type": "pct",
+              "current_base": 157,
+              "previous_base": 175,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 6.32,
+                "spread_change": 18.9
+              },
+              "z_score": -1.4,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -5034.38,
+              "share_of_total_change_pct": 57.07
+            },
+            {
+              "group": "cool_stuff",
+              "current": 6787.76,
+              "previous": 9277.5,
+              "change": -26.84,
+              "change_type": "pct",
+              "current_base": 44,
+              "previous_base": 56,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 1.24,
+                "spread_change": 20.51
+              },
+              "z_score": -1.37,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -2489.74,
+              "share_of_total_change_pct": 28.22
+            },
+            {
+              "group": "baby",
+              "current": 8601.89,
+              "previous": 5158.41,
+              "change": 66.75,
+              "change_type": "pct",
+              "current_base": 57,
+              "previous_base": 36,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 4.21,
+                "spread_change": 55.28
+              },
+              "z_score": 1.13,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 3443.48,
+              "share_of_total_change_pct": -39.03
+            },
+            {
+              "group": "furniture_decor",
+              "current": 9830.49,
+              "previous": 14659.83,
+              "change": -32.94,
+              "change_type": "pct",
+              "current_base": 84,
+              "previous_base": 102,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -9.58,
+                "spread_change": 22.51
+              },
+              "z_score": -1.04,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -4829.34,
+              "share_of_total_change_pct": 54.74
+            },
+            {
+              "group": "health_beauty",
+              "current": 21007.82,
+              "previous": 26836.47,
+              "change": -21.72,
+              "change_type": "pct",
+              "current_base": 131,
+              "previous_base": 160,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 1.6,
+                "spread_change": 22.9
+              },
+              "z_score": -1.02,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -5828.65,
+              "share_of_total_change_pct": 66.07
+            },
+            {
+              "group": "perfumery",
+              "current": 5332.7,
+              "previous": 4648.37,
+              "change": 14.72,
+              "change_type": "pct",
+              "current_base": 48,
+              "previous_base": 42,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -6.05,
+                "spread_change": 23.19
+              },
+              "z_score": 0.9,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 684.33,
+              "share_of_total_change_pct": -7.76
+            },
+            {
+              "group": "computers_accessories",
+              "current": 17405.4,
+              "previous": 20621.22,
+              "change": -15.59,
+              "change_type": "pct",
+              "current_base": 125,
+              "previous_base": 134,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 4.16,
+                "spread_change": 24.32
+              },
+              "z_score": -0.81,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -3215.82,
+              "share_of_total_change_pct": 36.45
+            },
+            {
+              "group": "telephony",
+              "current": 5390.59,
+              "previous": 4926.32,
+              "change": 9.42,
+              "change_type": "pct",
+              "current_base": 77,
+              "previous_base": 69,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -13.57,
+                "spread_change": 34.38
+              },
+              "z_score": 0.67,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 464.27,
+              "share_of_total_change_pct": -5.26
+            },
+            {
+              "group": "toys",
+              "current": 6232.77,
+              "previous": 4721.03,
+              "change": 32.02,
+              "change_type": "pct",
+              "current_base": 62,
+              "previous_base": 46,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 21.65,
+                "spread_change": 33.47
+              },
+              "z_score": 0.31,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 1511.74,
+              "share_of_total_change_pct": -17.14
+            },
+            {
+              "group": "Other",
+              "current": 54530.69,
+              "previous": 48822.19,
+              "change": 11.69,
+              "change_type": "pct",
+              "current_base": 375,
+              "previous_base": 376,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 3.33,
+                "spread_change": 27.74
+              },
+              "z_score": 0.3,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 5708.5,
+              "share_of_total_change_pct": -64.71
+            },
+            {
+              "group": "garden_tools",
+              "current": 4161.16,
+              "previous": 5745.97,
+              "change": -27.58,
+              "change_type": "pct",
+              "current_base": 43,
+              "previous_base": 44,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -13.52,
+                "spread_change": 60.99
+              },
+              "z_score": -0.23,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -1584.81,
+              "share_of_total_change_pct": 17.96
+            },
+            {
+              "group": "watches_gifts",
+              "current": 23527.46,
+              "previous": 22828.19,
+              "change": 3.06,
+              "change_type": "pct",
+              "current_base": 105,
+              "previous_base": 105,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 8.35,
+                "spread_change": 43.07
+              },
+              "z_score": -0.12,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 699.27,
+              "share_of_total_change_pct": -7.93
+            }
+          ]
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          150
+        ]
+      },
+      "athena": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "dimension": "category",
+          "groups": [
+            {
+              "group": "housewares",
+              "current": 6205.94,
+              "previous": 10886.92,
+              "change": -43.0,
+              "change_type": "pct",
+              "current_base": 73,
+              "previous_base": 85,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -1.84,
+                "spread_change": 6.78
+              },
+              "z_score": -6.07,
+              "z_threshold": 3.0,
+              "is_unusual": true,
+              "warnings": [],
+              "absolute_change": -4680.98,
+              "share_of_total_change_pct": 53.06
+            },
+            {
+              "group": "auto",
+              "current": 12891.09,
+              "previous": 9461.36,
+              "change": 36.25,
+              "change_type": "pct",
+              "current_base": 78,
+              "previous_base": 63,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -8.93,
+                "spread_change": 27.19
+              },
+              "z_score": 1.66,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 3429.73,
+              "share_of_total_change_pct": -38.88
+            },
+            {
+              "group": "bed_bath_table",
+              "current": 16496.04,
+              "previous": 13595.62,
+              "change": 21.33,
+              "change_type": "pct",
+              "current_base": 137,
+              "previous_base": 148,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 5.36,
+                "spread_change": 10.29
+              },
+              "z_score": 1.55,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 2900.42,
+              "share_of_total_change_pct": -32.88
+            },
+            {
+              "group": "sports_leisure",
+              "current": 19889.37,
+              "previous": 24923.75,
+              "change": -20.2,
+              "change_type": "pct",
+              "current_base": 157,
+              "previous_base": 175,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 6.32,
+                "spread_change": 18.9
+              },
+              "z_score": -1.4,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -5034.38,
+              "share_of_total_change_pct": 57.07
+            },
+            {
+              "group": "cool_stuff",
+              "current": 6787.76,
+              "previous": 9277.5,
+              "change": -26.84,
+              "change_type": "pct",
+              "current_base": 44,
+              "previous_base": 56,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 1.24,
+                "spread_change": 20.51
+              },
+              "z_score": -1.37,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -2489.74,
+              "share_of_total_change_pct": 28.22
+            },
+            {
+              "group": "baby",
+              "current": 8601.89,
+              "previous": 5158.41,
+              "change": 66.75,
+              "change_type": "pct",
+              "current_base": 57,
+              "previous_base": 36,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 4.21,
+                "spread_change": 55.28
+              },
+              "z_score": 1.13,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 3443.48,
+              "share_of_total_change_pct": -39.03
+            },
+            {
+              "group": "furniture_decor",
+              "current": 9830.49,
+              "previous": 14659.83,
+              "change": -32.94,
+              "change_type": "pct",
+              "current_base": 84,
+              "previous_base": 102,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -9.58,
+                "spread_change": 22.51
+              },
+              "z_score": -1.04,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -4829.34,
+              "share_of_total_change_pct": 54.74
+            },
+            {
+              "group": "health_beauty",
+              "current": 21007.82,
+              "previous": 26836.47,
+              "change": -21.72,
+              "change_type": "pct",
+              "current_base": 131,
+              "previous_base": 160,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 1.6,
+                "spread_change": 22.9
+              },
+              "z_score": -1.02,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -5828.65,
+              "share_of_total_change_pct": 66.07
+            },
+            {
+              "group": "perfumery",
+              "current": 5332.7,
+              "previous": 4648.37,
+              "change": 14.72,
+              "change_type": "pct",
+              "current_base": 48,
+              "previous_base": 42,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -6.05,
+                "spread_change": 23.19
+              },
+              "z_score": 0.9,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 684.33,
+              "share_of_total_change_pct": -7.76
+            },
+            {
+              "group": "computers_accessories",
+              "current": 17405.4,
+              "previous": 20621.22,
+              "change": -15.59,
+              "change_type": "pct",
+              "current_base": 125,
+              "previous_base": 134,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 4.16,
+                "spread_change": 24.32
+              },
+              "z_score": -0.81,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -3215.82,
+              "share_of_total_change_pct": 36.45
+            },
+            {
+              "group": "telephony",
+              "current": 5390.59,
+              "previous": 4926.32,
+              "change": 9.42,
+              "change_type": "pct",
+              "current_base": 77,
+              "previous_base": 69,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -13.57,
+                "spread_change": 34.38
+              },
+              "z_score": 0.67,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 464.27,
+              "share_of_total_change_pct": -5.26
+            },
+            {
+              "group": "toys",
+              "current": 6232.77,
+              "previous": 4721.03,
+              "change": 32.02,
+              "change_type": "pct",
+              "current_base": 62,
+              "previous_base": 46,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 21.65,
+                "spread_change": 33.47
+              },
+              "z_score": 0.31,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 1511.74,
+              "share_of_total_change_pct": -17.14
+            },
+            {
+              "group": "Other",
+              "current": 54530.69,
+              "previous": 48822.19,
+              "change": 11.69,
+              "change_type": "pct",
+              "current_base": 375,
+              "previous_base": 376,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 3.33,
+                "spread_change": 27.74
+              },
+              "z_score": 0.3,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 5708.5,
+              "share_of_total_change_pct": -64.71
+            },
+            {
+              "group": "garden_tools",
+              "current": 4161.16,
+              "previous": 5745.97,
+              "change": -27.58,
+              "change_type": "pct",
+              "current_base": 43,
+              "previous_base": 44,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -13.52,
+                "spread_change": 60.99
+              },
+              "z_score": -0.23,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -1584.81,
+              "share_of_total_change_pct": 17.96
+            },
+            {
+              "group": "watches_gifts",
+              "current": 23527.46,
+              "previous": 22828.19,
+              "change": 3.06,
+              "change_type": "pct",
+              "current_base": 105,
+              "previous_base": 105,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 8.35,
+                "spread_change": 43.07
+              },
+              "z_score": -0.12,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 699.27,
+              "share_of_total_change_pct": -7.93
+            }
+          ]
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          150
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "3aac4a41-f715-4c4d-ae70-3a83fcbb5b9e",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 188765,
+          "engine_ms": 489
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "R3",
+        "data": "source",
+        "tool": "get_delivery_signals",
+        "args": {
+          "week": "2018-03-12"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "ok",
+        "data": {
+          "metrics": {
+            "late_delivery_pct": {
+              "current": 21.09,
+              "previous": 24.78,
+              "change": -3.69,
+              "change_type": "points",
+              "current_base": 1541,
+              "previous_base": 1598,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -2.47,
+                "spread_change": 3.91
+              },
+              "z_score": -0.31,
+              "z_threshold": 2.0,
+              "is_unusual": false
+            },
+            "avg_delivery_days": {
+              "current": 16.72,
+              "previous": 18.07,
+              "change": -7.43,
+              "change_type": "pct",
+              "current_base": 1541,
+              "previous_base": 1598,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -3.9,
+                "spread_change": 6.57
+              },
+              "z_score": -0.54,
+              "z_threshold": 2.0,
+              "is_unusual": false
+            }
+          },
+          "note": "Association only: delivery changes alongside other changes do not establish cause."
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "ok",
+        "data": {
+          "metrics": {
+            "late_delivery_pct": {
+              "current": 21.09,
+              "previous": 24.78,
+              "change": -3.69,
+              "change_type": "points",
+              "current_base": 1541,
+              "previous_base": 1598,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -2.47,
+                "spread_change": 3.91
+              },
+              "z_score": -0.31,
+              "z_threshold": 2.0,
+              "is_unusual": false
+            },
+            "avg_delivery_days": {
+              "current": 16.72,
+              "previous": 18.07,
+              "change": -7.43,
+              "change_type": "pct",
+              "current_base": 1541,
+              "previous_base": 1598,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -3.9,
+                "spread_change": 6.57
+              },
+              "z_score": -0.54,
+              "z_threshold": 2.0,
+              "is_unusual": false
+            }
+          },
+          "note": "Association only: delivery changes alongside other changes do not establish cause."
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "465f8b68-1753-44b8-bced-023776f6e245",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28744,
+          "engine_ms": 522
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S1",
+        "data": "golden",
+        "tool": "get_breakdown",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2018-08-13",
+          "dimension": "category"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "dimension": "category",
+          "groups": [
+            {
+              "group": "health_beauty",
+              "current": 20404.77,
+              "previous": 40482.91,
+              "change": -49.6,
+              "change_type": "pct",
+              "current_base": 132,
+              "previous_base": 240,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -13.38,
+                "spread_change": 13.57
+              },
+              "z_score": -2.67,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -20078.14,
+              "share_of_total_change_pct": 47.53
+            },
+            {
+              "group": "sports_leisure",
+              "current": 19559.99,
+              "previous": 13487.02,
+              "change": 45.03,
+              "change_type": "pct",
+              "current_base": 136,
+              "previous_base": 116,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 3.94,
+                "spread_change": 24.3
+              },
+              "z_score": 1.69,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 6072.97,
+              "share_of_total_change_pct": -14.38
+            },
+            {
+              "group": "Other",
+              "current": 56023.2,
+              "previous": 70591.6,
+              "change": -20.64,
+              "change_type": "pct",
+              "current_base": 459,
+              "previous_base": 513,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -2.39,
+                "spread_change": 18.44
+              },
+              "z_score": -0.99,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -14568.4,
+              "share_of_total_change_pct": 34.49
+            },
+            {
+              "group": "computers_accessories",
+              "current": 11382.33,
+              "previous": 14815.27,
+              "change": -23.17,
+              "change_type": "pct",
+              "current_base": 117,
+              "previous_base": 112,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -10.95,
+                "spread_change": 14.38
+              },
+              "z_score": -0.85,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -3432.94,
+              "share_of_total_change_pct": 8.13
+            },
+            {
+              "group": "watches_gifts",
+              "current": 19814.37,
+              "previous": 26207.47,
+              "change": -24.39,
+              "change_type": "pct",
+              "current_base": 108,
+              "previous_base": 112,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -6.45,
+                "spread_change": 24.83
+              },
+              "z_score": -0.72,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -6393.1,
+              "share_of_total_change_pct": 15.13
+            },
+            {
+              "group": "telephony",
+              "current": 9027.32,
+              "previous": 15134.68,
+              "change": -40.35,
+              "change_type": "pct",
+              "current_base": 63,
+              "previous_base": 82,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 5.32,
+                "spread_change": 63.92
+              },
+              "z_score": -0.71,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -6107.36,
+              "share_of_total_change_pct": 14.46
+            },
+            {
+              "group": "garden_tools",
+              "current": 4083.11,
+              "previous": 8595.23,
+              "change": -52.5,
+              "change_type": "pct",
+              "current_base": 36,
+              "previous_base": 47,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -3.89,
+                "spread_change": 79.61
+              },
+              "z_score": -0.61,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -4512.12,
+              "share_of_total_change_pct": 10.68
+            },
+            {
+              "group": "auto",
+              "current": 18254.83,
+              "previous": 15992.94,
+              "change": 14.14,
+              "change_type": "pct",
+              "current_base": 100,
+              "previous_base": 131,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -6.05,
+                "spread_change": 36.01
+              },
+              "z_score": 0.56,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 2261.89,
+              "share_of_total_change_pct": -5.35
+            },
+            {
+              "group": "cool_stuff",
+              "current": 4393.94,
+              "previous": 5315.2,
+              "change": -17.33,
+              "change_type": "pct",
+              "current_base": 30,
+              "previous_base": 39,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 8.16,
+                "spread_change": 53.56
+              },
+              "z_score": -0.48,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -921.26,
+              "share_of_total_change_pct": 2.18
+            },
+            {
+              "group": "housewares",
+              "current": 20836.56,
+              "previous": 17180.93,
+              "change": 21.28,
+              "change_type": "pct",
+              "current_base": 179,
+              "previous_base": 158,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 2.92,
+                "spread_change": 42.31
+              },
+              "z_score": 0.43,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 3655.63,
+              "share_of_total_change_pct": -8.65
+            },
+            {
+              "group": "toys",
+              "current": 4921.04,
+              "previous": 5833.75,
+              "change": -15.65,
+              "change_type": "pct",
+              "current_base": 43,
+              "previous_base": 45,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 3.88,
+                "spread_change": 53.69
+              },
+              "z_score": -0.36,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -912.71,
+              "share_of_total_change_pct": 2.16
+            },
+            {
+              "group": "baby",
+              "current": 6380.43,
+              "previous": 5447.95,
+              "change": 17.12,
+              "change_type": "pct",
+              "current_base": 47,
+              "previous_base": 62,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 9.92,
+                "spread_change": 35.41
+              },
+              "z_score": 0.2,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 932.48,
+              "share_of_total_change_pct": -2.21
+            },
+            {
+              "group": "bed_bath_table",
+              "current": 18720.06,
+              "previous": 17004.72,
+              "change": 10.09,
+              "change_type": "pct",
+              "current_base": 180,
+              "previous_base": 161,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 18.3,
+                "spread_change": 43.34
+              },
+              "z_score": -0.19,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 1715.34,
+              "share_of_total_change_pct": -4.06
+            },
+            {
+              "group": "furniture_decor",
+              "current": 12942.18,
+              "previous": 13636.83,
+              "change": -5.09,
+              "change_type": "pct",
+              "current_base": 103,
+              "previous_base": 111,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 2.82,
+                "spread_change": 53.53
+              },
+              "z_score": -0.15,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -694.65,
+              "share_of_total_change_pct": 1.64
+            },
+            {
+              "group": "perfumery",
+              "current": 6784.89,
+              "previous": 6045.54,
+              "change": 12.23,
+              "change_type": "pct",
+              "current_base": 48,
+              "previous_base": 52,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 9.08,
+                "spread_change": 40.61
+              },
+              "z_score": 0.08,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 739.35,
+              "share_of_total_change_pct": -1.75
+            }
+          ]
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          150
+        ]
+      },
+      "athena": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "dimension": "category",
+          "groups": [
+            {
+              "group": "health_beauty",
+              "current": 20404.77,
+              "previous": 40482.91,
+              "change": -49.6,
+              "change_type": "pct",
+              "current_base": 132,
+              "previous_base": 240,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -13.38,
+                "spread_change": 13.57
+              },
+              "z_score": -2.67,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -20078.14,
+              "share_of_total_change_pct": 47.53
+            },
+            {
+              "group": "sports_leisure",
+              "current": 19559.99,
+              "previous": 13487.02,
+              "change": 45.03,
+              "change_type": "pct",
+              "current_base": 136,
+              "previous_base": 116,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 3.94,
+                "spread_change": 24.3
+              },
+              "z_score": 1.69,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 6072.97,
+              "share_of_total_change_pct": -14.38
+            },
+            {
+              "group": "Other",
+              "current": 56023.2,
+              "previous": 70591.6,
+              "change": -20.64,
+              "change_type": "pct",
+              "current_base": 459,
+              "previous_base": 513,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -2.39,
+                "spread_change": 18.44
+              },
+              "z_score": -0.99,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -14568.4,
+              "share_of_total_change_pct": 34.49
+            },
+            {
+              "group": "computers_accessories",
+              "current": 11382.33,
+              "previous": 14815.27,
+              "change": -23.17,
+              "change_type": "pct",
+              "current_base": 117,
+              "previous_base": 112,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -10.95,
+                "spread_change": 14.38
+              },
+              "z_score": -0.85,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -3432.94,
+              "share_of_total_change_pct": 8.13
+            },
+            {
+              "group": "watches_gifts",
+              "current": 19814.37,
+              "previous": 26207.47,
+              "change": -24.39,
+              "change_type": "pct",
+              "current_base": 108,
+              "previous_base": 112,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -6.45,
+                "spread_change": 24.83
+              },
+              "z_score": -0.72,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -6393.1,
+              "share_of_total_change_pct": 15.13
+            },
+            {
+              "group": "telephony",
+              "current": 9027.32,
+              "previous": 15134.68,
+              "change": -40.35,
+              "change_type": "pct",
+              "current_base": 63,
+              "previous_base": 82,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 5.32,
+                "spread_change": 63.92
+              },
+              "z_score": -0.71,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -6107.36,
+              "share_of_total_change_pct": 14.46
+            },
+            {
+              "group": "garden_tools",
+              "current": 4083.11,
+              "previous": 8595.23,
+              "change": -52.5,
+              "change_type": "pct",
+              "current_base": 36,
+              "previous_base": 47,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -3.89,
+                "spread_change": 79.61
+              },
+              "z_score": -0.61,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -4512.12,
+              "share_of_total_change_pct": 10.68
+            },
+            {
+              "group": "auto",
+              "current": 18254.83,
+              "previous": 15992.94,
+              "change": 14.14,
+              "change_type": "pct",
+              "current_base": 100,
+              "previous_base": 131,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": -6.05,
+                "spread_change": 36.01
+              },
+              "z_score": 0.56,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 2261.89,
+              "share_of_total_change_pct": -5.35
+            },
+            {
+              "group": "cool_stuff",
+              "current": 4393.94,
+              "previous": 5315.2,
+              "change": -17.33,
+              "change_type": "pct",
+              "current_base": 30,
+              "previous_base": 39,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 8.16,
+                "spread_change": 53.56
+              },
+              "z_score": -0.48,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -921.26,
+              "share_of_total_change_pct": 2.18
+            },
+            {
+              "group": "housewares",
+              "current": 20836.56,
+              "previous": 17180.93,
+              "change": 21.28,
+              "change_type": "pct",
+              "current_base": 179,
+              "previous_base": 158,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 2.92,
+                "spread_change": 42.31
+              },
+              "z_score": 0.43,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 3655.63,
+              "share_of_total_change_pct": -8.65
+            },
+            {
+              "group": "toys",
+              "current": 4921.04,
+              "previous": 5833.75,
+              "change": -15.65,
+              "change_type": "pct",
+              "current_base": 43,
+              "previous_base": 45,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 3.88,
+                "spread_change": 53.69
+              },
+              "z_score": -0.36,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -912.71,
+              "share_of_total_change_pct": 2.16
+            },
+            {
+              "group": "baby",
+              "current": 6380.43,
+              "previous": 5447.95,
+              "change": 17.12,
+              "change_type": "pct",
+              "current_base": 47,
+              "previous_base": 62,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 9.92,
+                "spread_change": 35.41
+              },
+              "z_score": 0.2,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 932.48,
+              "share_of_total_change_pct": -2.21
+            },
+            {
+              "group": "bed_bath_table",
+              "current": 18720.06,
+              "previous": 17004.72,
+              "change": 10.09,
+              "change_type": "pct",
+              "current_base": 180,
+              "previous_base": 161,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 18.3,
+                "spread_change": 43.34
+              },
+              "z_score": -0.19,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 1715.34,
+              "share_of_total_change_pct": -4.06
+            },
+            {
+              "group": "furniture_decor",
+              "current": 12942.18,
+              "previous": 13636.83,
+              "change": -5.09,
+              "change_type": "pct",
+              "current_base": 103,
+              "previous_base": 111,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 2.82,
+                "spread_change": 53.53
+              },
+              "z_score": -0.15,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": -694.65,
+              "share_of_total_change_pct": 1.64
+            },
+            {
+              "group": "perfumery",
+              "current": 6784.89,
+              "previous": 6045.54,
+              "change": 12.23,
+              "change_type": "pct",
+              "current_base": 48,
+              "previous_base": 52,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 9.08,
+                "spread_change": 40.61
+              },
+              "z_score": 0.08,
+              "z_threshold": 3.0,
+              "is_unusual": false,
+              "warnings": [],
+              "absolute_change": 739.35,
+              "share_of_total_change_pct": -1.75
+            }
+          ]
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          150
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "b7266689-0783-44c0-b91c-ac3f5c20afbd",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 189005,
+          "engine_ms": 510
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S2",
+        "data": "golden",
+        "tool": "get_delivery_signals",
+        "args": {
+          "week": "2018-05-28",
+          "state": "RJ"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "ok",
+        "data": {
+          "metrics": {
+            "late_delivery_pct": {
+              "current": 30.15,
+              "previous": 4.17,
+              "change": 25.98,
+              "change_type": "points",
+              "current_base": 136,
+              "previous_base": 96,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 0.6,
+                "spread_change": 4.37
+              },
+              "z_score": 5.8,
+              "z_threshold": 2.0,
+              "is_unusual": true
+            },
+            "avg_delivery_days": {
+              "current": 12.8,
+              "previous": 15.29,
+              "change": -16.28,
+              "change_type": "pct",
+              "current_base": 136,
+              "previous_base": 96,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 4.24,
+                "spread_change": 6.16
+              },
+              "z_score": -3.33,
+              "z_threshold": 2.0,
+              "is_unusual": true
+            }
+          },
+          "note": "Association only: delivery changes alongside other changes do not establish cause."
+        },
+        "warnings": [
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "late_delivery_pct: only 4 events (late_orders)",
+            "details": {
+              "events": 4,
+              "minimum": 10
+            }
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "ok",
+        "data": {
+          "metrics": {
+            "late_delivery_pct": {
+              "current": 30.15,
+              "previous": 4.17,
+              "change": 25.98,
+              "change_type": "points",
+              "current_base": 136,
+              "previous_base": 96,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 0.6,
+                "spread_change": 4.37
+              },
+              "z_score": 5.8,
+              "z_threshold": 2.0,
+              "is_unusual": true
+            },
+            "avg_delivery_days": {
+              "current": 12.8,
+              "previous": 15.29,
+              "change": -16.28,
+              "change_type": "pct",
+              "current_base": 136,
+              "previous_base": 96,
+              "baseline": {
+                "weeks": 8,
+                "method": "robust",
+                "center_change": 4.24,
+                "spread_change": 6.16
+              },
+              "z_score": -3.33,
+              "z_threshold": 2.0,
+              "is_unusual": true
+            }
+          },
+          "note": "Association only: delivery changes alongside other changes do not establish cause."
+        },
+        "warnings": [
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "late_delivery_pct: only 4 events (late_orders)",
+            "details": {
+              "events": 4,
+              "minimum": 10
+            }
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "dde8ac90-6743-46a9-afcf-01c639c24d6f",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28815,
+          "engine_ms": 490
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S3",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2018-02-12",
+          "state": "MG"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "current": 11416.89,
+          "previous": 29462.18,
+          "change": -61.25,
+          "change_type": "pct",
+          "current_base": 86,
+          "previous_base": 211,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": -5.7,
+            "spread_change": 27.24
+          },
+          "z_score": -2.04,
+          "z_threshold": 2.0,
+          "is_unusual": true
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "ok",
+        "data": {
+          "metric": "product_revenue",
+          "current": 11416.89,
+          "previous": 29462.18,
+          "change": -61.25,
+          "change_type": "pct",
+          "current_base": 86,
+          "previous_base": 211,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": -5.7,
+            "spread_change": 27.24
+          },
+          "z_score": -2.04,
+          "z_threshold": 2.0,
+          "is_unusual": true
+        },
+        "warnings": [],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "42f0dbc2-8f06-487f-ae57-80085623d87e",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28815,
+          "engine_ms": 578
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S4",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2018-08-20"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "partial",
+        "data": {
+          "metric": "product_revenue",
+          "current": 126386.39,
+          "previous": 233529.02,
+          "change": -45.88,
+          "change_type": "pct",
+          "current_base": 1058,
+          "previous_base": 1767,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": -0.48,
+            "spread_change": 14.94
+          },
+          "z_score": -3.04,
+          "z_threshold": 2.0,
+          "is_unusual": true
+        },
+        "warnings": [
+          {
+            "code": "INCOMPLETE_WEEK",
+            "message": "Week 2018-08-20 has incomplete data; numbers are not final",
+            "details": {}
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "partial",
+        "data": {
+          "metric": "product_revenue",
+          "current": 126386.39,
+          "previous": 233529.02,
+          "change": -45.88,
+          "change_type": "pct",
+          "current_base": 1058,
+          "previous_base": 1767,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": -0.48,
+            "spread_change": 14.94
+          },
+          "z_score": -3.04,
+          "z_threshold": 2.0,
+          "is_unusual": true
+        },
+        "warnings": [
+          {
+            "code": "INCOMPLETE_WEEK",
+            "message": "Week 2018-08-20 has incomplete data; numbers are not final",
+            "details": {}
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "bdbfe50c-cfb0-4922-a17c-cdf71f1e2f54",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28657,
+          "engine_ms": 363
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S5",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "avg_review_score",
+          "week": "2018-07-02"
+        },
+        "simulate": "avg_review_score",
+        "athena_queries": 0
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "error",
+        "data": null,
+        "warnings": [],
+        "error_type": "timeout",
+        "row_counts": []
+      },
+      "athena": {
+        "status": "error",
+        "data": null,
+        "warnings": [],
+        "error_type": "timeout",
+        "row_counts": []
+      },
+      "athena_queries": []
+    },
+    {
+      "case": {
+        "id": "S6",
+        "data": "golden",
+        "tool": "get_delivery_signals",
+        "args": {
+          "week": "2018-01-15",
+          "state": "PR"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "error",
+        "data": null,
+        "warnings": [
+          {
+            "code": "INVALID_DATA",
+            "message": "late_delivery_pct: rows failing sanity checks excluded",
+            "details": {
+              "weeks": [
+                "2018-01-15"
+              ]
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "late_delivery_pct: only 0 in the base (delivered_orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "late_delivery_pct: only 0 events (late_orders)",
+            "details": {
+              "events": 0,
+              "minimum": 10
+            }
+          },
+          {
+            "code": "INVALID_DATA",
+            "message": "avg_delivery_days: rows failing sanity checks excluded",
+            "details": {
+              "weeks": [
+                "2018-01-15"
+              ]
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "avg_delivery_days: only 0 in the base (delivered_orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          }
+        ],
+        "error_type": "malformed_data",
+        "row_counts": []
+      },
+      "athena": {
+        "status": "error",
+        "data": null,
+        "warnings": [
+          {
+            "code": "INVALID_DATA",
+            "message": "late_delivery_pct: rows failing sanity checks excluded",
+            "details": {
+              "weeks": [
+                "2018-01-15"
+              ]
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "late_delivery_pct: only 0 in the base (delivered_orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "late_delivery_pct: only 0 events (late_orders)",
+            "details": {
+              "events": 0,
+              "minimum": 10
+            }
+          },
+          {
+            "code": "INVALID_DATA",
+            "message": "avg_delivery_days: rows failing sanity checks excluded",
+            "details": {
+              "weeks": [
+                "2018-01-15"
+              ]
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "avg_delivery_days: only 0 in the base (delivered_orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          }
+        ],
+        "error_type": "malformed_data",
+        "row_counts": []
+      },
+      "athena_queries": [
+        {
+          "execution_id": "b60a8348-af78-438f-841b-d846e6710379",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28815,
+          "engine_ms": 426
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S7",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2018-04-23"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "partial",
+        "data": {
+          "metric": "product_revenue",
+          "current": null,
+          "previous": 234235.15,
+          "change": null,
+          "change_type": "pct",
+          "current_base": 0,
+          "previous_base": 1665,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": null,
+            "spread_change": null
+          },
+          "z_score": null,
+          "z_threshold": 2.0,
+          "is_unusual": null,
+          "data_issue": "incomplete"
+        },
+        "warnings": [
+          {
+            "code": "NO_DATA",
+            "message": "total: some state groups missing; week excluded",
+            "details": {
+              "weeks": [
+                "2018-04-23"
+              ]
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "total: only 0 in the base (orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "partial",
+        "data": {
+          "metric": "product_revenue",
+          "current": null,
+          "previous": 234235.15,
+          "change": null,
+          "change_type": "pct",
+          "current_base": 0,
+          "previous_base": 1665,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": null,
+            "spread_change": null
+          },
+          "z_score": null,
+          "z_threshold": 2.0,
+          "is_unusual": null,
+          "data_issue": "incomplete"
+        },
+        "warnings": [
+          {
+            "code": "NO_DATA",
+            "message": "total: some state groups missing; week excluded",
+            "details": {
+              "weeks": [
+                "2018-04-23"
+              ]
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "total: only 0 in the base (orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "15b22731-b031-47b2-abd0-f562332ff802",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28657,
+          "engine_ms": 383
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S8",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "late_delivery_pct",
+          "week": "2018-02-19",
+          "state": "SC"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "partial",
+        "data": {
+          "metric": "late_delivery_pct",
+          "current": null,
+          "previous": 27.94,
+          "change": null,
+          "change_type": "points",
+          "current_base": 0,
+          "previous_base": 68,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": null,
+            "spread_change": null
+          },
+          "z_score": null,
+          "z_threshold": 2.0,
+          "is_unusual": null
+        },
+        "warnings": [
+          {
+            "code": "ZERO_DENOMINATOR",
+            "message": "total: change cannot be calculated (zero base)",
+            "details": {}
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "total: only 0 in the base (delivered_orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "total: only 0 events (late_orders)",
+            "details": {
+              "events": 0,
+              "minimum": 10
+            }
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena": {
+        "status": "partial",
+        "data": {
+          "metric": "late_delivery_pct",
+          "current": null,
+          "previous": 27.94,
+          "change": null,
+          "change_type": "points",
+          "current_base": 0,
+          "previous_base": 68,
+          "baseline": {
+            "weeks": 8,
+            "method": "robust",
+            "center_change": null,
+            "spread_change": null
+          },
+          "z_score": null,
+          "z_threshold": 2.0,
+          "is_unusual": null
+        },
+        "warnings": [
+          {
+            "code": "ZERO_DENOMINATOR",
+            "message": "total: change cannot be calculated (zero base)",
+            "details": {}
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "total: only 0 in the base (delivered_orders)",
+            "details": {
+              "base": 0,
+              "minimum": 30
+            }
+          },
+          {
+            "code": "SMALL_SAMPLE",
+            "message": "total: only 0 events (late_orders)",
+            "details": {
+              "events": 0,
+              "minimum": 10
+            }
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          10
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "b2b9f22a-69a5-4819-ac0a-1a8dd965dda0",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28815,
+          "engine_ms": 447
+        }
+      ]
+    },
+    {
+      "case": {
+        "id": "S9",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "net_profit",
+          "week": "2018-03-12"
+        },
+        "athena_queries": 0
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "error",
+        "data": null,
+        "warnings": [],
+        "error_type": "validation",
+        "row_counts": []
+      },
+      "athena": {
+        "status": "error",
+        "data": null,
+        "warnings": [],
+        "error_type": "validation",
+        "row_counts": []
+      },
+      "athena_queries": []
+    },
+    {
+      "case": {
+        "id": "S10",
+        "data": "golden",
+        "tool": "get_weekly_metric",
+        "args": {
+          "metric": "product_revenue",
+          "week": "2017-02-13"
+        }
+      },
+      "match": true,
+      "differences": [],
+      "duckdb": {
+        "status": "partial",
+        "data": {
+          "metric": "product_revenue",
+          "current": 52274.4,
+          "previous": 77774.43,
+          "change": -32.79,
+          "change_type": "pct",
+          "current_base": 381,
+          "previous_base": 529,
+          "baseline": {
+            "weeks": 1,
+            "method": "robust",
+            "center_change": null,
+            "spread_change": null
+          },
+          "z_score": null,
+          "z_threshold": 2.0,
+          "is_unusual": null
+        },
+        "warnings": [
+          {
+            "code": "NO_DATA",
+            "message": "total: some state groups missing; week excluded",
+            "details": {
+              "weeks": [
+                "2016-12-19",
+                "2017-01-02"
+              ]
+            }
+          },
+          {
+            "code": "INSUFFICIENT_HISTORY",
+            "message": "total: 1 earlier weeks available; 8 needed for a z-score",
+            "details": {}
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          8
+        ]
+      },
+      "athena": {
+        "status": "partial",
+        "data": {
+          "metric": "product_revenue",
+          "current": 52274.4,
+          "previous": 77774.43,
+          "change": -32.79,
+          "change_type": "pct",
+          "current_base": 381,
+          "previous_base": 529,
+          "baseline": {
+            "weeks": 1,
+            "method": "robust",
+            "center_change": null,
+            "spread_change": null
+          },
+          "z_score": null,
+          "z_threshold": 2.0,
+          "is_unusual": null
+        },
+        "warnings": [
+          {
+            "code": "NO_DATA",
+            "message": "total: some state groups missing; week excluded",
+            "details": {
+              "weeks": [
+                "2016-12-19",
+                "2017-01-02"
+              ]
+            }
+          },
+          {
+            "code": "INSUFFICIENT_HISTORY",
+            "message": "total: 1 earlier weeks available; 8 needed for a z-score",
+            "details": {}
+          }
+        ],
+        "error_type": null,
+        "row_counts": [
+          8
+        ]
+      },
+      "athena_queries": [
+        {
+          "execution_id": "1ce19f90-b688-4082-bf5b-cbf7d87d488c",
+          "state": "SUCCEEDED",
+          "bytes_scanned": 28657,
+          "engine_ms": 453
+        }
+      ]
+    }
+  ]
+}

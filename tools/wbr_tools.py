@@ -8,7 +8,7 @@ from tools import config
 from tools.backend import QueryError, run_query
 from tools.envelope import (make_envelope, make_error, make_evidence_ref,
                             make_warning, to_number)
-from tools.queries import metric_columns, resolve_column, weekly_series_sql
+from tools.queries import metric_columns, physical_table, resolve_column, weekly_series_sql
 
 ONE_WEEK = timedelta(days=7)
 
@@ -276,7 +276,7 @@ def get_weekly_metric(metric: str, week: str, state: str | None = None,
         return make_envelope(tool, "error", parameters, warnings=warnings, error=make_error(
             "malformed_data", "Rows for the compared weeks failed sanity checks; no values reported"))
     data = {"metric": metric, **summary}
-    evidence = [make_evidence_ref(query_id, meta["backend"], table, len(rows), meta["executed_at"],
+    evidence = [make_evidence_ref(query_id, meta["backend"], physical_table(table), len(rows), meta["executed_at"],
                                   meta.get("athena_query_execution_id"))]
     return make_envelope(tool, _status(warnings, week_date, summary["current"] is not None),
                          parameters, data=data, evidence_refs=evidence, warnings=warnings)
@@ -355,7 +355,7 @@ def get_breakdown(metric: str, week: str, dimension: str, state: str | None = No
     data = {"metric": metric, "dimension": dimension, "groups": groups}
     has_data = any(g["current"] is not None for g in groups)
     bad_group = any(g.get("data_issue") for g in groups)
-    evidence = [make_evidence_ref(query_id, meta["backend"], table, len(rows), meta["executed_at"],
+    evidence = [make_evidence_ref(query_id, meta["backend"], physical_table(table), len(rows), meta["executed_at"],
                                   meta.get("athena_query_execution_id"))]
     status = "partial" if (not has_data or bad_group or week_date in config.INCOMPLETE_WEEKS) else "ok"
     return make_envelope(tool, status, parameters, data=data, evidence_refs=evidence, warnings=warnings)
@@ -446,7 +446,7 @@ def get_delivery_signals(week: str, state: str | None = None, category: str | No
     data = {"metrics": metrics,
             "note": "Association only: delivery changes alongside other changes do not establish cause."}
     has_data = any(v["current"] is not None for v in metrics.values())
-    evidence = [make_evidence_ref(query_id, meta["backend"], table, len(rows), meta["executed_at"],
+    evidence = [make_evidence_ref(query_id, meta["backend"], physical_table(table), len(rows), meta["executed_at"],
                                   meta.get("athena_query_execution_id"))]
     return make_envelope(tool, _status(warnings, week_date, has_data), parameters,
                          data=data, evidence_refs=evidence, warnings=warnings)

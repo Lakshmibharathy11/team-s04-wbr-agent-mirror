@@ -27,6 +27,8 @@ args = parser.parse_args()
 
 if args.golden:
     config.DUCKDB_PATH = str(ROOT / "data" / "golden.duckdb")
+    if config.BACKEND == "athena":
+        config.TABLE_PREFIX = "golden_"  # golden tables on Athena
 
 out = run_analyst(args.week)
 runs = ROOT / "runs"

@@ -28,7 +28,9 @@ from tools import config                    # noqa: E402
 
 
 def evaluate(trials: int, only: list[str], model_factory=None) -> dict:
-    config.DUCKDB_PATH = str(ROOT / "data" / "golden.duckdb")
+    config.DUCKDB_PATH = str(ROOT / "data" / "golden.duckdb")  # golden data on DuckDB
+    if config.BACKEND == "athena":
+        config.TABLE_PREFIX = "golden_"  # golden data on Athena: golden_weekly_metrics, ...
     keys = json.loads((ROOT / "tests" / "golden" / "answer_keys.json").read_text())
     scenarios = [s for s in keys["scenarios"] if s["id"] in GRADERS
                  and (not only or any(s["id"].startswith(o) for o in only))]
@@ -54,7 +56,9 @@ def evaluate(trials: int, only: list[str], model_factory=None) -> dict:
                         "passed": passed, "pass_rate": round(passed / trials, 2),
                         "pass_at_k": passed > 0, "pass_all_k": passed == trials,
                         "runs": trials_out})
-    return {"model": os.environ.get("WBR_MODEL_ID", "scripted"), "trials": trials, "results": results}
+    provider = os.environ.get("WBR_MODEL_PROVIDER", "bedrock") if not model_factory else "scripted"
+    return {"provider": provider, "model": os.environ.get("WBR_MODEL_ID", "scripted"),
+            "trials": trials, "results": results}
 
 
 if __name__ == "__main__":

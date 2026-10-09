@@ -32,7 +32,7 @@ data/source/
 *.avro
 *.orc
 athena-results/
-
+data/export/
 # Local artifacts
 coverage/
 dist/

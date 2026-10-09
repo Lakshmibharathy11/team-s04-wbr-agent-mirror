@@ -6,12 +6,32 @@ backends is a single setting (WBR_BACKEND) and nothing else changes.
 
 import threading
 import time
+from datetime import date
 from pathlib import Path
 
 from tools import config
 from tools.envelope import now_iso
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+# Every Athena attempt in this process (including retries and failures), so
+# test runs can report query count, data scanned and run time.
+QUERY_LOG: list[dict] = []
+
+
+def athena_usage() -> dict:
+    """Totals for the Athena attempts logged so far."""
+    scanned = sum(q.get("bytes_scanned") or 0 for q in QUERY_LOG)
+    return {
+        "attempts": len(QUERY_LOG),
+        "succeeded": sum(q["state"] == "SUCCEEDED" for q in QUERY_LOG),
+        "bytes_scanned": scanned,
+        # Athena bills at least 10 MB per query that scans data
+        "billed_bytes_estimate": sum(max(q.get("bytes_scanned") or 0, 10 * 1024 * 1024)
+                                     for q in QUERY_LOG if q["state"] == "SUCCEEDED"),
+        "engine_ms": sum(q.get("engine_ms") or 0 for q in QUERY_LOG),
+    }
 
 
 class QueryError(Exception):
@@ -59,6 +79,8 @@ def _run_duckdb(sql: str, params: list) -> tuple[list[dict], dict]:
 def _athena_literal(value) -> str:
     """Athena execution parameters are inserted as SQL literals, so text needs quotes.
     Values are already checked against allowed lists before reaching here."""
+    if isinstance(value, date):  # a bare 2018-03-12 would be read as subtraction
+        return f"DATE '{value.isoformat()}'"
     if isinstance(value, str):
         return "'" + value.replace("'", "''") + "'"
     return str(value)
@@ -70,10 +92,12 @@ def _convert(value: str | None, athena_type: str):
         return None
     if athena_type in ("integer", "bigint", "smallint", "tinyint"):
         return int(value)
-    if athena_type in ("double", "float", "real", "decimal"):
+    if athena_type in ("double", "float", "real") or athena_type.startswith("decimal"):
         return float(value)
     if athena_type == "boolean":
         return value.lower() == "true"
+    if athena_type == "date":  # DuckDB returns date objects; the tools look weeks up by date
+        return date.fromisoformat(value)
     return value
 
 
@@ -81,7 +105,14 @@ def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
     import boto3
     from botocore.exceptions import BotoCoreError, ClientError
 
+    # Hard cap on attempts (guardrail for approved, bounded test runs)
+    if config.MAX_ATHENA_QUERIES is not None and len(QUERY_LOG) >= config.MAX_ATHENA_QUERIES:
+        raise QueryError("query_budget",
+                         f"Athena query cap reached ({config.MAX_ATHENA_QUERIES}); query not sent")
+
     client = boto3.client("athena", region_name=config.AWS_REGION)
+    log = {"execution_id": None, "state": "NOT_STARTED", "bytes_scanned": None, "engine_ms": None}
+    QUERY_LOG.append(log)
     try:
         request = {
             "QueryString": sql,
@@ -91,18 +122,23 @@ def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
         if params:
             request["ExecutionParameters"] = [_athena_literal(p) for p in params]
         query_id = client.start_query_execution(**request)["QueryExecutionId"]
+        log["execution_id"] = query_id
 
         # Wait for the query to finish, stopping it if it runs too long
         deadline = time.monotonic() + config.QUERY_TIMEOUT_SECONDS
         while True:
-            status = client.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]["Status"]
-            state = status["State"]
+            execution = client.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]
+            status, state = execution["Status"], execution["Status"]["State"]
+            stats = execution.get("Statistics", {})
+            log.update(state=state, bytes_scanned=stats.get("DataScannedInBytes"),
+                       engine_ms=stats.get("EngineExecutionTimeInMillis"))
             if state == "SUCCEEDED":
                 break
             if state in ("FAILED", "CANCELLED"):
                 raise QueryError("query_failed", status.get("StateChangeReason", state))
             if time.monotonic() > deadline:
                 client.stop_query_execution(QueryExecutionId=query_id)
+                log["state"] = "STOPPED_TIMEOUT"
                 raise QueryError("timeout", f"Query exceeded {config.QUERY_TIMEOUT_SECONDS} seconds")
             time.sleep(0.5)
 
@@ -126,6 +162,7 @@ def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
     except QueryError:
         raise
     except (BotoCoreError, ClientError) as exc:
+        log["state"] = "CLIENT_ERROR"
         raise QueryError("query_failed", str(exc))
 
 
@@ -149,6 +186,6 @@ def run_query(query_id: str, sql: str, params: list) -> tuple[list[dict], dict]:
             meta = {"backend": config.BACKEND, "executed_at": now_iso(), "attempts": attempts}
             meta.update(extra)
             return rows, meta
-        except QueryError:
-            if attempts > config.MAX_RETRIES:
+        except QueryError as exc:
+            if exc.error_type == "query_budget" or attempts > config.MAX_RETRIES:
                 raise

@@ -20,6 +20,16 @@ AWS_REGION = os.environ.get("WBR_AWS_REGION", "us-east-2")
 ATHENA_WORKGROUP = os.environ.get("WBR_ATHENA_WORKGROUP", "S04-WBR")
 ATHENA_DATABASE = os.environ.get("WBR_ATHENA_DATABASE", "s04_wbr")
 
+# Table name prefix. On Athena the golden (planted) tables live in the same
+# database as the real ones, named golden_weekly_metrics etc., so evaluation
+# sets this to "golden_". On DuckDB golden tables are in a separate file, so "".
+TABLE_PREFIX = os.environ.get("WBR_TABLE_PREFIX", "")
+
+# Safety cap on Athena query attempts per process (retries count).
+# Empty = no cap. Approved test runs set this so a bug cannot run up queries.
+_max_q = os.environ.get("WBR_MAX_ATHENA_QUERIES", "")
+MAX_ATHENA_QUERIES = int(_max_q) if _max_q else None
+
 # Query behavior
 QUERY_TIMEOUT_SECONDS = 30
 MAX_RETRIES = 1  # failure contract: retry once, then report the error
