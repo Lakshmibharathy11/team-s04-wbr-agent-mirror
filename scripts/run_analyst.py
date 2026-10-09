@@ -37,6 +37,11 @@ path = runs / f"{args.week}_{datetime.now():%Y%m%d_%H%M%S}.json"
 path.write_text(json.dumps(out, indent=2, default=str))
 
 print(f"Run status: {out['run']['status']}  ({out['run'].get('tool_calls', 0)} tool calls)")
+u = out["run"].get("usage", {})
+if u:
+    print(f"Tokens: {u['input_tokens']:,} in / {u['output_tokens']:,} out ({u['model_calls']} model calls"
+          f"{', token cap hit' if u['token_cap_hit'] else ''})  |  Athena: {u['athena_queries']} queries, "
+          f"{u['athena_bytes_scanned'] / 1024:.1f} KB  |  {u['seconds']} s")
 if out["report_draft"]:
     report = out["report_draft"]
     print(f"Draft status: {report['draft_status']}\n")

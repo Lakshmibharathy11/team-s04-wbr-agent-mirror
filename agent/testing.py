@@ -27,9 +27,10 @@ def request_ids(messages) -> list[str]:
 
 
 class ScriptedModel(Model):
-    def __init__(self, steps):
+    def __init__(self, steps, tokens_per_call: int = 0):
         self.steps = list(steps)
         self.config = {}
+        self.tokens_per_call = tokens_per_call  # fake usage, to test the token budget
 
     def update_config(self, **kwargs):
         self.config.update(kwargs)
@@ -57,5 +58,6 @@ class ScriptedModel(Model):
         yield {"contentBlockDelta": {"delta": {"toolUse": {"input": json.dumps(tool_input)}}}}
         yield {"contentBlockStop": {}}
         yield {"messageStop": {"stopReason": "tool_use"}}
-        yield {"metadata": {"usage": {"inputTokens": 0, "outputTokens": 0, "totalTokens": 0},
+        n = self.tokens_per_call
+        yield {"metadata": {"usage": {"inputTokens": n, "outputTokens": 0, "totalTokens": n},
                             "metrics": {"latencyMs": 0}}}
