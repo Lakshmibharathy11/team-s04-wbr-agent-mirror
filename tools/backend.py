@@ -10,6 +10,8 @@ from datetime import date
 from pathlib import Path
 
 from tools import config
+from tools.budget import (LEDGER, S3_ALLOWANCE_PER_QUERY_USD, BudgetError, athena_cost,
+                          athena_reservation)
 from tools.envelope import now_iso
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -34,8 +36,12 @@ def athena_usage() -> dict:
     }
 
 
+NO_RETRY = {"query_budget", "access_denied", "uncertain"}
+
+
 class QueryError(Exception):
-    """A query that failed. error_type is 'timeout' or 'query_failed'."""
+    """A query that failed. error_type: 'timeout', 'query_failed', or (never retried)
+    'query_budget', 'access_denied', 'uncertain'."""
 
     def __init__(self, error_type: str, message: str):
         super().__init__(message)
@@ -101,51 +107,104 @@ def _convert(value: str | None, athena_type: str):
     return value
 
 
-def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
+def _athena_clients():
+    """Two clients: one that starts queries with NO automatic SDK retries (so every
+    start attempt is one we counted and reserved), and one for free status/result
+    reads that may retry normally."""
     import boto3
+    from botocore.config import Config
+    timeouts = {"connect_timeout": 10, "read_timeout": 30}
+    start = boto3.client("athena", region_name=config.AWS_REGION,
+                         config=Config(retries={"total_max_attempts": 1}, **timeouts))
+    read = boto3.client("athena", region_name=config.AWS_REGION,
+                        config=Config(retries={"total_max_attempts": 3, "mode": "standard"}, **timeouts))
+    return start, read
+
+
+def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
     from botocore.exceptions import BotoCoreError, ClientError
 
-    # Hard cap on attempts (guardrail for approved, bounded test runs)
+    # Guard 1: hard cap on start attempts (retries included)
     if config.MAX_ATHENA_QUERIES is not None and len(QUERY_LOG) >= config.MAX_ATHENA_QUERIES:
         raise QueryError("query_budget",
                          f"Athena query cap reached ({config.MAX_ATHENA_QUERIES}); query not sent")
-
-    client = boto3.client("athena", region_name=config.AWS_REGION)
-    log = {"execution_id": None, "state": "NOT_STARTED", "bytes_scanned": None, "engine_ms": None}
-    QUERY_LOG.append(log)
+    # Clients first: if credentials or region are missing, nothing can be sent
     try:
-        request = {
-            "QueryString": sql,
-            "WorkGroup": config.ATHENA_WORKGROUP,
-            "QueryExecutionContext": {"Database": config.ATHENA_DATABASE},
-        }
-        if params:
-            request["ExecutionParameters"] = [_athena_literal(p) for p in params]
-        query_id = client.start_query_execution(**request)["QueryExecutionId"]
-        log["execution_id"] = query_id
+        start_client, read_client = _athena_clients()
+    except Exception as exc:
+        LEDGER.halt(f"athena credentials unavailable: {type(exc).__name__}")
+        raise QueryError("access_denied", f"Cannot create Athena client ({type(exc).__name__}: {exc})")
+    # Guard 2: reserve the worst-case cost (full 100 MiB scan + S3) before sending
+    try:
+        rid = LEDGER.reserve("athena", athena_reservation(), "start_query_execution")
+    except BudgetError as exc:
+        raise QueryError("query_budget", str(exc))
+    log = {"execution_id": None, "state": "NOT_STARTED", "bytes_scanned": None, "engine_ms": None,
+           "started_at": now_iso()}
+    QUERY_LOG.append(log)
+    request = {
+        "QueryString": sql,
+        "WorkGroup": config.ATHENA_WORKGROUP,
+        "QueryExecutionContext": {"Database": config.ATHENA_DATABASE},
+    }
+    if params:
+        request["ExecutionParameters"] = [_athena_literal(p) for p in params]
 
+    # Start the query. Be precise about what we know happened.
+    try:
+        query_id = start_client.start_query_execution(**request)["QueryExecutionId"]
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code", "")
+        LEDGER.settle(rid, 0.0, f"rejected before running: {code}")   # nothing ran
+        if "AccessDenied" in code or code in ("UnrecognizedClientException", "ExpiredTokenException"):
+            log["state"] = "ACCESS_DENIED"
+            LEDGER.halt(f"athena access denied: {code}")
+            raise QueryError("access_denied", f"Athena access denied ({code}); batch halted")
+        log["state"] = "REJECTED"
+        raise QueryError("query_failed", str(exc))
+    except BotoCoreError as exc:
+        # e.g. a network timeout: the query may or may not have started
+        log["state"] = "UNCERTAIN"
+        LEDGER.settle(rid, None, "uncertain start; full reservation kept")
+        LEDGER.halt("uncertain athena execution")
+        raise QueryError("uncertain", f"Athena start uncertain ({type(exc).__name__}); batch halted")
+    log["execution_id"] = query_id
+
+    try:
         # Wait for the query to finish, stopping it if it runs too long
         deadline = time.monotonic() + config.QUERY_TIMEOUT_SECONDS
         while True:
-            execution = client.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]
+            execution = read_client.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]
             status, state = execution["Status"], execution["Status"]["State"]
             stats = execution.get("Statistics", {})
             log.update(state=state, bytes_scanned=stats.get("DataScannedInBytes"),
-                       engine_ms=stats.get("EngineExecutionTimeInMillis"))
+                       engine_ms=stats.get("EngineExecutionTimeInMillis"),
+                       total_ms=stats.get("TotalExecutionTimeInMillis"))
             if state == "SUCCEEDED":
                 break
             if state in ("FAILED", "CANCELLED"):
+                LEDGER.settle(rid, athena_cost(log["bytes_scanned"] or 0) + S3_ALLOWANCE_PER_QUERY_USD, state)
+                rid = None
                 raise QueryError("query_failed", status.get("StateChangeReason", state))
             if time.monotonic() > deadline:
-                client.stop_query_execution(QueryExecutionId=query_id)
+                read_client.stop_query_execution(QueryExecutionId=query_id)
                 log["state"] = "STOPPED_TIMEOUT"
+                LEDGER.settle(rid, None, "stopped at timeout; full reservation kept")
+                rid = None
                 raise QueryError("timeout", f"Query exceeded {config.QUERY_TIMEOUT_SECONDS} seconds")
             time.sleep(0.5)
+
+        if log["bytes_scanned"] is None:
+            LEDGER.settle(rid, None, "no scan statistics; full reservation kept")
+            LEDGER.halt("missing athena cost accounting")
+            raise QueryError("uncertain", "Athena returned no scan statistics; batch halted")
+        LEDGER.settle(rid, athena_cost(log["bytes_scanned"]) + S3_ALLOWANCE_PER_QUERY_USD, "succeeded")
+        rid = None
 
         # Read all result pages; the first row of the first page is the header
         rows, columns, types = [], None, None
         for page_number, page in enumerate(
-            client.get_paginator("get_query_results").paginate(QueryExecutionId=query_id)
+            read_client.get_paginator("get_query_results").paginate(QueryExecutionId=query_id)
         ):
             if columns is None:
                 meta = page["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
@@ -162,8 +221,11 @@ def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
     except QueryError:
         raise
     except (BotoCoreError, ClientError) as exc:
-        log["state"] = "CLIENT_ERROR"
-        raise QueryError("query_failed", str(exc))
+        # The query started but we lost track of it: keep the full reservation and stop
+        log["state"] = "UNCERTAIN"
+        LEDGER.settle(rid, None, "lost track after start; full reservation kept")
+        LEDGER.halt("uncertain athena execution")
+        raise QueryError("uncertain", f"Athena status unknown ({type(exc).__name__}); batch halted")
 
 
 # ---------------------------------------------------------------------------
@@ -187,5 +249,6 @@ def run_query(query_id: str, sql: str, params: list) -> tuple[list[dict], dict]:
             meta.update(extra)
             return rows, meta
         except QueryError as exc:
-            if exc.error_type == "query_budget" or attempts > config.MAX_RETRIES:
+            # Never retry when retrying could be unsafe or pointless
+            if exc.error_type in NO_RETRY or attempts > config.MAX_RETRIES:
                 raise

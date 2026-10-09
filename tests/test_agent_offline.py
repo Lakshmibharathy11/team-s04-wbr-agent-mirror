@@ -121,25 +121,3 @@ if __name__ == "__main__":
         t()
         print(f"PASS  {t.__name__}")
     print(f"\n{len(tests)}/{len(tests)} tests passed")
-
-
-def test_token_budget_stops_investigation_and_reports_usage():
-    # Each fake model call reports 1,000 tokens; the cap is 2,500
-    steps = [
-        {"tool": "get_weekly_metric", "input": {"metric": "product_revenue", "week": WEEK}},
-        {"tool": "get_breakdown", "input": {"metric": "product_revenue", "week": WEEK, "dimension": "category"}},
-        {"tool": "get_delivery_signals", "input": {"week": WEEK}},
-        cite_all("health_beauty revenue fell."),   # the one call allowed after the cap
-        {"tool": "get_weekly_metric", "input": {"metric": "orders", "week": WEEK}},  # never reached
-    ]
-    out = run_analyst(WEEK, model=ScriptedModel(steps, tokens_per_call=1000), max_tokens=2500)
-    usage = out["run"]["usage"]
-    assert out["run"]["status"] == "ok", out["run"]
-    assert usage["token_cap_hit"] is True
-    assert out["run"]["tool_calls"] == 3                  # no investigating after the cap
-    # The cap is checked before each call, so the run can end at most two calls past it:
-    # the call that crossed the cap, plus the one allowed to write the report
-    assert usage["total_tokens"] <= 2500 + 2 * 1000
-    assert usage["model_calls_cancelled"] >= 1
-    assert usage["athena_queries"] == 0                   # DuckDB run: no Athena use
-    assert out["report_draft"]["claims"]

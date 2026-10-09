@@ -1,63 +1,174 @@
-"""Steering hooks: just-in-time guidance at the agent's decision points.
+"""Steering hooks: just-in-time guidance and hard guards at the agent's decision points.
 
-Instead of a longer prompt, these hooks step in only when needed:
-- the tool budget is used up -> stop investigating and write the report
-- an identical call is repeated -> point to the earlier result instead
-- the token budget is used up -> one last model call to write the report, then stop
-  (checked before each call, so a run can end at most two model calls past the cap)
+Guidance (instead of a longer prompt):
+- the tool budget is used up      -> stop investigating and write the report
+- an identical call is repeated   -> point to the earlier result instead
+
+Guards (cost and safety), checked BEFORE every model call:
+- reservation: the next call's worst case (estimated input + the output limit) is
+  reserved before sending, so the run can never pass its token cap
+- wrap-up:     when the remaining budget could not also cover a final report call,
+               investigating stops (tools blocked) and the next call writes the report
+- attempts:    a finite number of model attempts per run (SDK retries are disabled
+               in analyst.py, so every attempt is one counted here)
+- wall clock:  a time limit per run
+- accounting:  a call that returns no usage numbers, or fails with an exception
+               (uncertain execution), stops the run and halts the batch ledger
 """
+
+import json
+import math
+import time
 
 from strands.hooks import (AfterModelCallEvent, BeforeModelCallEvent, BeforeToolCallEvent,
                            HookProvider, HookRegistry)
 
 from agent.run_context import RunContext
+from tools.budget import LEDGER, BudgetError, model_cost
+from tools.envelope import now_iso
 
 QUERY_TOOLS = {"get_weekly_metric", "get_breakdown", "get_delivery_signals"}
 
+# Conservative token estimate: 2.5 characters per token (real text is usually ~4),
+# so the reservation is larger than the real input.
+CHARS_PER_TOKEN = 2.5
+# Room for one more tool result between now and the report call
+TOOL_RESULT_ALLOWANCE = 4000
+
+
+def estimate_input_tokens(agent) -> int:
+    """Upper-bound estimate of the next call's input: system prompt, history, tool specs."""
+    try:
+        specs = agent.tool_registry.get_all_tool_specs()
+    except Exception:
+        specs = []
+    text = json.dumps({"system": agent.system_prompt, "messages": agent.messages, "tools": specs},
+                      default=str)
+    return math.ceil(len(text) / CHARS_PER_TOKEN)
+
 
 class AnalystSteering(HookProvider):
-    def __init__(self, ctx: RunContext, max_tokens: int | None = None):
+    def __init__(self, ctx: RunContext, max_tokens: int | None = None, max_output_tokens: int = 2000,
+                 max_model_calls: int | None = None, max_seconds: float | None = None,
+                 strict_accounting: bool = False):
         self.ctx = ctx
-        self.max_tokens = max_tokens    # cost guard: total tokens per run (None = no cap)
-        self.blocked: list[dict] = []   # recorded for the transcript
-        self.model_calls = 0
-        self.model_calls_cancelled = 0
+        self.max_tokens = max_tokens              # cumulative input+output tokens per run
+        self.max_output_tokens = max_output_tokens
+        self.max_model_calls = max_model_calls    # finite model attempts per run
+        self.max_seconds = max_seconds
+        self.strict = strict_accounting           # True for paid models: usage numbers required
+        self.started = time.monotonic()
+
+        self.blocked: list[dict] = []             # tool calls blocked (for the transcript)
+        self.model_log: list[dict] = []           # every model attempt: reservation and actual usage
+        self.used_tokens = 0
+        self.model_calls = 0                      # attempts actually sent
+        self.model_calls_cancelled = 0            # attempts refused before sending
+        self.wrap_up = False                      # investigation stopped; next call writes the report
         self.token_cap_hit = False
-        self._final_calls_left = 1      # after the cap: one call allowed to write the report
+        self.stop_reason: str | None = None       # set when the run must end
+        self._pending: dict | None = None
 
     def register_hooks(self, registry: HookRegistry, **kwargs) -> None:
         registry.add_callback(BeforeToolCallEvent, self.before_tool)
         registry.add_callback(BeforeModelCallEvent, self.before_model)
         registry.add_callback(AfterModelCallEvent, self.after_model)
 
-    def before_model(self, event: BeforeModelCallEvent) -> None:
-        if self.max_tokens is None:
-            return
-        used = event.agent.event_loop_metrics.accumulated_usage.get("totalTokens", 0)
-        if used < self.max_tokens:
-            return
-        if not self.token_cap_hit:
-            # First time over the cap: no more investigating, tools are blocked too
-            self.token_cap_hit = True
-            self.ctx.max_tool_calls = self.ctx.tool_calls_used
-            event.cancel = (f"Token budget reached ({used} of {self.max_tokens}). "
-                            "Write the report now with the evidence you already have.")
-            self.model_calls_cancelled += 1
-            return
-        if self._final_calls_left > 0:
-            self._final_calls_left -= 1   # let the report be written
-            return
-        event.cancel = "Token budget exhausted; no further model calls."
+    # ------------------------------------------------------------------ model guards
+    def _cancel(self, event, message: str, stop: str | None = None) -> None:
+        event.cancel = message
         self.model_calls_cancelled += 1
+        if stop and not self.stop_reason:
+            self.stop_reason = stop
+
+    def _start_wrap_up(self, event, why: str) -> None:
+        self.wrap_up = True
+        self.ctx.max_tool_calls = self.ctx.tool_calls_used   # block further tools
+        self._cancel(event, f"{why} Write the report now with the evidence you already have.")
+
+    def before_model(self, event: BeforeModelCallEvent) -> None:
+        if self.stop_reason:
+            self._cancel(event, f"Run stopped: {self.stop_reason}")
+            return
+        if LEDGER.halted:
+            self._cancel(event, "Batch halted.", stop=f"batch halted: {LEDGER.halted}")
+            return
+        if self.max_model_calls is not None and self.model_calls >= self.max_model_calls:
+            self._cancel(event, "Model attempt limit reached.",
+                         stop=f"model attempt limit ({self.max_model_calls}) reached")
+            return
+
+        est_input = max(event.projected_input_tokens or 0, estimate_input_tokens(event.agent))
+        reserve = est_input + self.max_output_tokens
+
+        if not self.wrap_up:
+            if self.max_seconds is not None and time.monotonic() - self.started >= self.max_seconds:
+                self._start_wrap_up(event, f"Time limit ({self.max_seconds:.0f} s) reached.")
+                return
+            # Continue investigating only if a final report call would still fit afterwards
+            report_reserve = est_input + TOOL_RESULT_ALLOWANCE + self.max_output_tokens
+            if self.max_tokens is not None and self.used_tokens + reserve + report_reserve > self.max_tokens:
+                self.token_cap_hit = True
+                self._start_wrap_up(event, f"Token budget nearly used ({self.used_tokens:,} of {self.max_tokens:,}).")
+                return
+        elif self.max_tokens is not None and self.used_tokens + reserve > self.max_tokens:
+            self.token_cap_hit = True
+            self._cancel(event, "Token budget exhausted.", stop="token cap: report call would not fit")
+            return
+
+        try:
+            rid = LEDGER.reserve("bedrock", model_cost(est_input, self.max_output_tokens),
+                                 f"run {self.ctx.week} call {self.model_calls + 1}")
+        except BudgetError as exc:
+            self._cancel(event, "Batch budget reached.", stop=str(exc))
+            return
+        self.model_calls += 1
+        self._pending = {"attempt": self.model_calls, "sent_at": now_iso(), "ledger_id": rid,
+                         "reserved_input_tokens": est_input,
+                         "reserved_output_tokens": self.max_output_tokens,
+                         "wrap_up_call": self.wrap_up}
 
     def after_model(self, event: AfterModelCallEvent) -> None:
-        self.model_calls += 1
+        pending, self._pending = self._pending, None
+        if pending is None:
+            return   # the call was cancelled before sending: nothing was spent
+        if event.exception is not None:
+            # Failed call: it may or may not have been processed (and billed)
+            LEDGER.settle(pending["ledger_id"], None, "model call failed; full reservation kept")
+            LEDGER.halt(f"model call failed: {type(event.exception).__name__}")
+            self.stop_reason = self.stop_reason or f"model call failed: {type(event.exception).__name__}"
+            self.model_log.append({**pending, "status": "exception",
+                                   "error": f"{type(event.exception).__name__}: {event.exception}"})
+            return
+        message = (event.stop_response.message if event.stop_response else None) or {}
+        usage = (message.get("metadata") or {}).get("usage") or {}
+        tin, tout = usage.get("inputTokens"), usage.get("outputTokens")
+        if tin is None or tout is None or (self.strict and (tin or 0) + (tout or 0) == 0):
+            LEDGER.settle(pending["ledger_id"], None, "no usage numbers; full reservation kept")
+            LEDGER.halt("missing model cost accounting")
+            self.stop_reason = self.stop_reason or "missing model cost accounting"
+            self.model_log.append({**pending, "status": "no_usage"})
+            return
+        LEDGER.settle(pending["ledger_id"], model_cost(tin, tout), "ok")
+        self.used_tokens += tin + tout
+        entry = {**pending, "status": "ok", "input_tokens": tin, "output_tokens": tout,
+                 "stop_reason": event.stop_response.stop_reason if event.stop_response else None}
+        if tin > pending["reserved_input_tokens"] or tout > pending["reserved_output_tokens"]:
+            # The estimate was too low: never expected, but stop rather than risk the cap
+            entry["status"] = "exceeded_reservation"
+            LEDGER.halt("model usage exceeded its reservation")
+            self.stop_reason = self.stop_reason or "model usage exceeded its reservation"
+        self.model_log.append(entry)
 
+    # ------------------------------------------------------------------ tool guidance
     def before_tool(self, event: BeforeToolCallEvent) -> None:
         name = event.tool_use["name"]
         if name not in QUERY_TOOLS:
             return   # e.g. the structured-output tool that writes the report
         args = {k: v for k, v in (event.tool_use.get("input") or {}).items()}
+        if self.stop_reason or LEDGER.halted:
+            self._block(event, name, args, "stopped", "The run is stopping; do not call more tools.")
+            return
         if self.ctx.tool_calls_used >= self.ctx.max_tool_calls:
             message = (f"Tool budget reached ({self.ctx.max_tool_calls} calls). Stop investigating "
                        "and write the report with the evidence you already have.")

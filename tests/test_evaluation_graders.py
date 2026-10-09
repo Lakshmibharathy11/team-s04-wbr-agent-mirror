@@ -83,13 +83,13 @@ def bad(key):
 
 
 def test_good_analyst_passes_every_scenario():
-    summary = evaluate(1, [], model_factory=lambda key, t: ScriptedModel(good(key)))
+    summary = evaluate(1, [], model_factory=lambda key, t: ScriptedModel(good(key)), stop_on_failure=False)
     failed = [r["scenario"] for r in summary["results"] if r["passed"] != 1]
     assert not failed, failed
 
 
 def test_bad_analyst_fails_every_scenario():
-    summary = evaluate(1, [], model_factory=lambda key, t: ScriptedModel(bad(key)))
+    summary = evaluate(1, [], model_factory=lambda key, t: ScriptedModel(bad(key)), stop_on_failure=False)
     passed = [r["scenario"] for r in summary["results"] if r["passed"] != 0]
     assert not passed, passed
 
