@@ -10,8 +10,8 @@ from datetime import date
 from pathlib import Path
 
 from tools import config
-from tools.budget import (LEDGER, S3_ALLOWANCE_PER_QUERY_USD, BudgetError, athena_cost,
-                          athena_reservation)
+from tools.budget import (ATHENA_SCAN_CUTOFF_BYTES, LEDGER, S3_ALLOWANCE_PER_QUERY_USD,
+                          BudgetError, athena_cost, athena_reservation)
 from tools.envelope import now_iso
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -170,8 +170,17 @@ def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
         raise QueryError("uncertain", f"Athena start uncertain ({type(exc).__name__}); batch halted")
     log["execution_id"] = query_id
 
+    def valid_bytes(value) -> bool:
+        return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+    def stop_batch(reason: str, message: str):
+        """Keep the FULL reservation (cost unknown or above bound) and halt the batch."""
+        LEDGER.settle(rid, None, f"{reason}; full reservation kept")
+        LEDGER.halt(f"athena: {reason}")
+        raise QueryError("uncertain", f"{message}; batch halted")
+
     try:
-        # Wait for the query to finish, stopping it if it runs too long
+        # Wait for the query to finish
         deadline = time.monotonic() + config.QUERY_TIMEOUT_SECONDS
         while True:
             execution = read_client.get_query_execution(QueryExecutionId=query_id)["QueryExecution"]
@@ -180,26 +189,30 @@ def _run_athena(sql: str, params: list) -> tuple[list[dict], dict]:
             log.update(state=state, bytes_scanned=stats.get("DataScannedInBytes"),
                        engine_ms=stats.get("EngineExecutionTimeInMillis"),
                        total_ms=stats.get("TotalExecutionTimeInMillis"))
-            if state == "SUCCEEDED":
+            if state in ("SUCCEEDED", "FAILED", "CANCELLED"):
                 break
-            if state in ("FAILED", "CANCELLED"):
-                LEDGER.settle(rid, athena_cost(log["bytes_scanned"] or 0) + S3_ALLOWANCE_PER_QUERY_USD, state)
-                rid = None
-                raise QueryError("query_failed", status.get("StateChangeReason", state))
             if time.monotonic() > deadline:
+                # Stopped part-way: the billed amount is not known, so treat it as uncertain
                 read_client.stop_query_execution(QueryExecutionId=query_id)
                 log["state"] = "STOPPED_TIMEOUT"
-                LEDGER.settle(rid, None, "stopped at timeout; full reservation kept")
-                rid = None
-                raise QueryError("timeout", f"Query exceeded {config.QUERY_TIMEOUT_SECONDS} seconds")
+                stop_batch("query timed out and was stopped",
+                           f"Query exceeded {config.QUERY_TIMEOUT_SECONDS} seconds")
             time.sleep(0.5)
 
-        if log["bytes_scanned"] is None:
-            LEDGER.settle(rid, None, "no scan statistics; full reservation kept")
-            LEDGER.halt("missing athena cost accounting")
-            raise QueryError("uncertain", "Athena returned no scan statistics; batch halted")
-        LEDGER.settle(rid, athena_cost(log["bytes_scanned"]) + S3_ALLOWANCE_PER_QUERY_USD, "succeeded")
+        # Terminal state: the scan statistics must be present, valid and within the bound
+        scanned = log["bytes_scanned"]
+        if not valid_bytes(scanned):
+            stop_batch(f"{state} with missing or invalid scan statistics ({scanned!r})",
+                       f"Athena {state} without valid scan statistics")
+        actual = athena_cost(scanned) + S3_ALLOWANCE_PER_QUERY_USD
+        if scanned > ATHENA_SCAN_CUTOFF_BYTES or actual > athena_reservation():
+            stop_batch(f"reported scan {scanned} bytes exceeds the reserved bound",
+                       "Athena reported more usage than was reserved")
+        LEDGER.settle(rid, actual, state.lower())
         rid = None
+        if state != "SUCCEEDED":
+            # Known, accounted failure: may be retried once under the failure contract
+            raise QueryError("query_failed", status.get("StateChangeReason", state))
 
         # Read all result pages; the first row of the first page is the header
         rows, columns, types = [], None, None

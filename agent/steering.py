@@ -5,19 +5,22 @@ Guidance (instead of a longer prompt):
 - an identical call is repeated   -> point to the earlier result instead
 
 Guards (cost and safety), checked BEFORE every model call:
-- reservation: the next call's worst case (estimated input + the output limit) is
-  reserved before sending, so the run can never pass its token cap
-- wrap-up:     when the remaining budget could not also cover a final report call,
-               investigating stops (tools blocked) and the next call writes the report
-- attempts:    a finite number of model attempts per run (SDK retries are disabled
-               in analyst.py, so every attempt is one counted here)
-- wall clock:  a time limit per run
-- accounting:  a call that returns no usage numbers, or fails with an exception
-               (uncertain execution), stops the run and halts the batch ledger
+- reservation: every call reserves the FULL model context window (the most input the
+               model can accept; longer requests are rejected by Bedrock) plus the
+               output limit. This is a hard upper bound that needs no token estimate,
+               so the run's token cap and the batch dollar ledger cannot be overshot.
+- wrap-up:     investigation continues only while a further call AND a final report
+               call would both fit; otherwise tools are blocked and the next call
+               writes the report. A call that cannot fit is refused, not sent.
+- attempts:    a finite number of model attempts per run (SDK and Strands retries are
+               disabled in analyst.py, so every attempt is one counted here)
+- soft time limit: after a set time, investigation stops and the report is written.
+               This is NOT a hard deadline; hard limits are the per-request timeouts
+               (Bedrock read timeout, Athena query timeout).
+- accounting:  a call that fails (uncertain execution), returns no usage numbers, or
+               reports more usage than was reserved, stops the run and halts the batch
 """
 
-import json
-import math
 import time
 
 from strands.hooks import (AfterModelCallEvent, BeforeModelCallEvent, BeforeToolCallEvent,
@@ -29,33 +32,19 @@ from tools.envelope import now_iso
 
 QUERY_TOOLS = {"get_weekly_metric", "get_breakdown", "get_delivery_signals"}
 
-# Conservative token estimate: 2.5 characters per token (real text is usually ~4),
-# so the reservation is larger than the real input.
-CHARS_PER_TOKEN = 2.5
-# Room for one more tool result between now and the report call
-TOOL_RESULT_ALLOWANCE = 4000
-
-
-def estimate_input_tokens(agent) -> int:
-    """Upper-bound estimate of the next call's input: system prompt, history, tool specs."""
-    try:
-        specs = agent.tool_registry.get_all_tool_specs()
-    except Exception:
-        specs = []
-    text = json.dumps({"system": agent.system_prompt, "messages": agent.messages, "tools": specs},
-                      default=str)
-    return math.ceil(len(text) / CHARS_PER_TOKEN)
+DEFAULT_CONTEXT_TOKENS = 128_000   # Amazon Nova Micro context window
 
 
 class AnalystSteering(HookProvider):
     def __init__(self, ctx: RunContext, max_tokens: int | None = None, max_output_tokens: int = 2000,
                  max_model_calls: int | None = None, max_seconds: float | None = None,
-                 strict_accounting: bool = False):
+                 strict_accounting: bool = False, context_tokens: int = DEFAULT_CONTEXT_TOKENS):
         self.ctx = ctx
         self.max_tokens = max_tokens              # cumulative input+output tokens per run
         self.max_output_tokens = max_output_tokens
         self.max_model_calls = max_model_calls    # finite model attempts per run
-        self.max_seconds = max_seconds
+        self.max_seconds = max_seconds            # SOFT investigation time limit (see header)
+        self.context_tokens = context_tokens      # hard bound on any one call's input
         self.strict = strict_accounting           # True for paid models: usage numbers required
         self.started = time.monotonic()
 
@@ -98,33 +87,33 @@ class AnalystSteering(HookProvider):
                          stop=f"model attempt limit ({self.max_model_calls}) reached")
             return
 
-        est_input = max(event.projected_input_tokens or 0, estimate_input_tokens(event.agent))
-        reserve = est_input + self.max_output_tokens
+        # Hard upper bound for this call: full context window + output limit
+        reserve = self.context_tokens + self.max_output_tokens
 
         if not self.wrap_up:
             if self.max_seconds is not None and time.monotonic() - self.started >= self.max_seconds:
-                self._start_wrap_up(event, f"Time limit ({self.max_seconds:.0f} s) reached.")
+                self._start_wrap_up(event, f"Soft time limit ({self.max_seconds:.0f} s) reached.")
                 return
-            # Continue investigating only if a final report call would still fit afterwards
-            report_reserve = est_input + TOOL_RESULT_ALLOWANCE + self.max_output_tokens
-            if self.max_tokens is not None and self.used_tokens + reserve + report_reserve > self.max_tokens:
+            # Keep investigating only if this call AND a final report call would both fit
+            if self.max_tokens is not None and self.used_tokens + 2 * reserve > self.max_tokens:
                 self.token_cap_hit = True
                 self._start_wrap_up(event, f"Token budget nearly used ({self.used_tokens:,} of {self.max_tokens:,}).")
                 return
-        elif self.max_tokens is not None and self.used_tokens + reserve > self.max_tokens:
+        if self.max_tokens is not None and self.used_tokens + reserve > self.max_tokens:
             self.token_cap_hit = True
-            self._cancel(event, "Token budget exhausted.", stop="token cap: report call would not fit")
+            self._cancel(event, "Token budget exhausted.", stop="token cap: the next call could not fit")
             return
 
         try:
-            rid = LEDGER.reserve("bedrock", model_cost(est_input, self.max_output_tokens),
+            rid = LEDGER.reserve("bedrock", model_cost(self.context_tokens, self.max_output_tokens),
                                  f"run {self.ctx.week} call {self.model_calls + 1}")
         except BudgetError as exc:
             self._cancel(event, "Batch budget reached.", stop=str(exc))
             return
         self.model_calls += 1
         self._pending = {"attempt": self.model_calls, "sent_at": now_iso(), "ledger_id": rid,
-                         "reserved_input_tokens": est_input,
+                         "reserved_input_tokens": self.context_tokens,
+                         "projected_input_tokens": event.projected_input_tokens,   # for the record only
                          "reserved_output_tokens": self.max_output_tokens,
                          "wrap_up_call": self.wrap_up}
 
@@ -154,7 +143,7 @@ class AnalystSteering(HookProvider):
         entry = {**pending, "status": "ok", "input_tokens": tin, "output_tokens": tout,
                  "stop_reason": event.stop_response.stop_reason if event.stop_response else None}
         if tin > pending["reserved_input_tokens"] or tout > pending["reserved_output_tokens"]:
-            # The estimate was too low: never expected, but stop rather than risk the cap
+            # Cannot happen if Bedrock enforces the context window and max_tokens; stop if it does
             entry["status"] = "exceeded_reservation"
             LEDGER.halt("model usage exceeded its reservation")
             self.stop_reason = self.stop_reason or "model usage exceeded its reservation"

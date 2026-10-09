@@ -13,6 +13,7 @@ from datetime import timedelta
 
 from strands import Agent
 from strands.event_loop._retry import ModelRetryStrategy
+from strands.tools.executors import SequentialToolExecutor
 
 from agent.analyst_tools import make_tools
 from agent.postchecks import finalize
@@ -30,7 +31,8 @@ MAX_TURNS = 40        # cap on model turns per invocation (Strands Limits)
 MAX_RUN_TOKENS = int(os.environ.get("WBR_MAX_RUN_TOKENS", "300000"))      # per run, all model calls
 MAX_OUTPUT_TOKENS = int(os.environ.get("WBR_MAX_OUTPUT_TOKENS", "2000"))  # per model response
 MAX_MODEL_CALLS = int(os.environ.get("WBR_MAX_MODEL_CALLS", "30"))         # model attempts per run
-MAX_RUN_SECONDS = float(os.environ.get("WBR_MAX_RUN_SECONDS", "900"))     # wall clock per run
+MAX_RUN_SECONDS = float(os.environ.get("WBR_MAX_RUN_SECONDS", "900"))     # SOFT limit: then write the report
+CONTEXT_TOKENS = int(os.environ.get("WBR_CONTEXT_TOKENS", "128000"))     # model context window (Nova Micro)
 MODEL_READ_TIMEOUT = 120   # seconds to wait for a model response
 
 
@@ -108,6 +110,7 @@ def _usage(agent, steering, athena_before: int, started: float) -> dict:
         "token_cap": steering.max_tokens,
         "token_cap_hit": steering.token_cap_hit,
         "wrap_up": steering.wrap_up,
+        "reserved_tokens_per_call": steering.context_tokens + steering.max_output_tokens,
         "model_calls": steering.model_calls,
         "model_call_limit": steering.max_model_calls,
         "model_calls_cancelled": steering.model_calls_cancelled,
@@ -125,7 +128,8 @@ def run_analyst(week: str, model=None, max_tool_calls: int = MAX_TOOL_CALLS,
                 max_turns: int = MAX_TURNS, max_tokens: int | None = MAX_RUN_TOKENS,
                 max_model_calls: int | None = MAX_MODEL_CALLS,
                 max_seconds: float | None = MAX_RUN_SECONDS,
-                strict_accounting: bool | None = None) -> dict:
+                strict_accounting: bool | None = None,
+                context_tokens: int = CONTEXT_TOKENS) -> dict:
     started = time.monotonic()
     athena_before = len(backend.QUERY_LOG)
     try:
@@ -139,13 +143,16 @@ def run_analyst(week: str, model=None, max_tool_calls: int = MAX_TOOL_CALLS,
     paid = type(model).__name__ == "BedrockModel" if strict_accounting is None else strict_accounting
     steering = AnalystSteering(ctx, max_tokens=max_tokens, max_output_tokens=MAX_OUTPUT_TOKENS,
                                max_model_calls=max_model_calls, max_seconds=max_seconds,
-                               strict_accounting=paid)
+                               strict_accounting=paid, context_tokens=context_tokens)
     steering.http_log = []
     _attach_request_log(model, steering.http_log)
     # max_attempts=1: Strands does not retry failed model calls on its own
     agent = Agent(model=model, tools=make_tools(ctx), system_prompt=SYSTEM_PROMPT,
                   hooks=[steering], callback_handler=None,
-                  retry_strategy=ModelRetryStrategy(max_attempts=1))
+                  retry_strategy=ModelRetryStrategy(max_attempts=1),
+                  # One tool at a time, so the tool budget and Athena caps are checked
+                  # before every single query (the default runs tools in parallel)
+                  tool_executor=SequentialToolExecutor())
 
     try:
         result = agent(investigation_prompt(ctx.week), structured_output_model=DraftReport,

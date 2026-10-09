@@ -46,37 +46,72 @@ def report(messages):
 
 
 # ----------------------------------------------------------------------------- tokens
+# Token tests use a simulated 40,000-token context window so the numbers stay small.
+# Every model call reserves context + output = 42,000 tokens before it is sent.
+CTX = 40_000
+
+
 def test_token_cap_is_never_exceeded_and_report_still_written():
-    # Reserve-before-send: a small cap forces wrap-up; total tokens must stay under it
-    cap = 30_000
-    model = ScriptedModel(TOOL_STEPS * 3 + [report], tokens_per_call="realistic")
-    # Make every later step a report so whichever call is the wrap-up call writes it
-    model.steps = TOOL_STEPS + [report] * 10
-    out = run_analyst(WEEK, model=model, max_tokens=cap, strict_accounting=True)
+    model = ScriptedModel(TOOL_STEPS + [report] * 10, tokens_per_call="realistic")
+    out = run_analyst(WEEK, model=model, max_tokens=150_000, context_tokens=CTX, strict_accounting=True)
     u = out["run"]["usage"]
     assert out["run"]["status"] == "ok", out["run"]
-    assert u["guard_counted_tokens"] <= cap
-    assert u["total_tokens"] <= cap
-    assert all(a["input_tokens"] <= a["reserved_input_tokens"] for a in u["model_attempts"])
+    assert u["total_tokens"] <= 150_000 and u["guard_counted_tokens"] <= 150_000
+    assert all(a["reserved_input_tokens"] == CTX for a in u["model_attempts"])
+
+
+def test_underestimated_input_cannot_overshoot_the_cap():
+    # The request text is small, but the model reports 35,000 input tokens per call:
+    # any estimate based on the text would be far too low. The full-context reservation
+    # still keeps the run under its cap, and investigation stops in time for the report.
+    model = ScriptedModel([TOOL_STEPS[0], report, report], tokens_per_call=35_000)
+    out = run_analyst(WEEK, model=model, max_tokens=100_000, context_tokens=CTX, strict_accounting=True)
+    u = out["run"]["usage"]
+    assert out["run"]["status"] == "ok", out["run"]
+    assert u["total_tokens"] <= 100_000
+    assert model.stream_calls == 2                        # 1 investigation call + 1 report call
+    assert u["wrap_up"] and out["run"]["tool_calls"] == 1
+
+
+def test_call_that_could_not_fit_is_prevented_not_detected():
+    # 35,000 tokens per call, 42,000 reserved per call, cap 100,000. After the
+    # investigation call, the model ignores the request to write the report (it asks
+    # for another tool). Used = 70,000; a third call would need 42,000 more, so it is
+    # refused BEFORE sending. The run ends under the cap; nothing is billed past it.
+    model = ScriptedModel(TOOL_STEPS * 2, tokens_per_call=35_000)
+    out = run_analyst(WEEK, model=model, max_tokens=100_000, context_tokens=CTX, strict_accounting=True)
+    u = out["run"]["usage"]
+    assert out["run"]["status"] == "error"
+    assert model.stream_calls == 2                        # the third call was never sent
+    assert u["total_tokens"] == 70_000 <= 100_000
+    assert "could not fit" in u["stop_reason"]
 
 
 def test_wrap_up_blocks_tools_when_budget_runs_low():
     model = ScriptedModel(TOOL_STEPS + [report] * 10, tokens_per_call="realistic")
-    out = run_analyst(WEEK, model=model, max_tokens=22_000, strict_accounting=True)
+    out = run_analyst(WEEK, model=model, max_tokens=95_000, context_tokens=CTX, strict_accounting=True)
     u = out["run"]["usage"]
     assert u["wrap_up"] and u["token_cap_hit"]
     assert out["run"]["tool_calls"] < len(TOOL_STEPS)       # investigation stopped early
-    assert u["total_tokens"] <= 22_000
+    assert u["total_tokens"] <= 95_000
 
 
-def test_cap_too_small_for_any_report_stops_run_without_sending():
+def test_cap_too_small_for_any_call_sends_nothing():
     model = ScriptedModel(TOOL_STEPS + [report], tokens_per_call="realistic")
-    out = run_analyst(WEEK, model=model, max_tokens=500, strict_accounting=True)
+    out = run_analyst(WEEK, model=model, max_tokens=41_000, context_tokens=CTX, strict_accounting=True)
     assert out["run"]["status"] == "error"
     assert model.stream_calls == 0                           # nothing was sent
 
 
-# ----------------------------------------------------------------------------- attempts
+def test_reported_usage_above_reservation_halts_batch():
+    # Cannot happen with Bedrock's own limits, but if usage ever exceeds the bound, stop
+    model = ScriptedModel(TOOL_STEPS + [report] * 5, tokens_per_call=CTX + 1)
+    LEDGER.reset(0.75)
+    out = run_analyst(WEEK, model=model, max_tokens=300_000, context_tokens=CTX, strict_accounting=True)
+    assert out["run"]["status"] == "error" and model.stream_calls == 1
+    assert LEDGER.halted == "model usage exceeded its reservation"
+
+
 def test_model_attempt_limit_is_finite():
     model = ScriptedModel(TOOL_STEPS * 5, tokens_per_call="realistic")
     out = run_analyst(WEEK, model=model, max_model_calls=3, strict_accounting=True)
@@ -113,7 +148,7 @@ def test_budget_ceiling_refuses_call_before_sending():
     assert LEDGER.halted.startswith("cap risk")
 
 
-def test_wall_clock_limit_forces_report():
+def test_soft_time_limit_forces_report():
     model = ScriptedModel(TOOL_STEPS + [report] * 5, tokens_per_call="realistic")
     out = run_analyst(WEEK, model=model, max_seconds=0, strict_accounting=True)
     assert out["run"]["status"] == "ok"
@@ -122,8 +157,11 @@ def test_wall_clock_limit_forces_report():
 
 # ----------------------------------------------------------------------------- Athena
 class FakeAthena:
-    def __init__(self, start_error=None, bytes_scanned=1000):
-        self.start_error, self.bytes_scanned, self.starts = start_error, bytes_scanned, 0
+    """Stand-in for Athena. state: terminal state to report; bytes_scanned=None omits the
+    scan statistics (as a misbehaving response would)."""
+
+    def __init__(self, start_error=None, bytes_scanned=1000, state="SUCCEEDED"):
+        self.start_error, self.bytes_scanned, self.state, self.starts = start_error, bytes_scanned, state, 0
 
     def start_query_execution(self, **kwargs):
         self.starts += 1
@@ -132,9 +170,11 @@ class FakeAthena:
         return {"QueryExecutionId": f"q{self.starts}"}
 
     def get_query_execution(self, QueryExecutionId):
-        return {"QueryExecution": {"Status": {"State": "SUCCEEDED"},
-                                   "Statistics": {"DataScannedInBytes": self.bytes_scanned,
-                                                  "EngineExecutionTimeInMillis": 5}}}
+        stats = {"EngineExecutionTimeInMillis": 5}
+        if self.bytes_scanned is not None:
+            stats["DataScannedInBytes"] = self.bytes_scanned
+        return {"QueryExecution": {"Status": {"State": self.state, "StateChangeReason": "test"},
+                                   "Statistics": stats}}
 
     def get_paginator(self, name):
         class P:
@@ -193,6 +233,48 @@ def test_athena_reserves_full_cutoff_then_settles_actual(monkeypatch):
     assert entry["actual_usd"] < entry["reserved_usd"]                      # 10 MB minimum billed
 
 
+@pytest.mark.parametrize("state", ["FAILED", "CANCELLED", "SUCCEEDED"])
+def test_athena_missing_scan_stats_keeps_reservation_and_stops_everything(monkeypatch, state):
+    fake = FakeAthena(bytes_scanned=None, state=state)
+    use_fake(monkeypatch, fake)
+    LEDGER.reset(0.75)
+    with pytest.raises(backend.QueryError) as exc:
+        backend.run_query("q", "SELECT 1", [])
+    assert exc.value.error_type == "uncertain"
+    assert fake.starts == 1                                      # not retried
+    entry = LEDGER.entries[0]
+    assert entry["charged_usd"] == pytest.approx(athena_reservation())   # full reservation kept
+    assert LEDGER.halted
+    with pytest.raises(backend.QueryError):                     # no later query is sent
+        backend.run_query("q", "SELECT 1", [])
+    assert fake.starts == 1
+    model = ScriptedModel([report], tokens_per_call="realistic")  # and no model call is sent
+    out = run_analyst(WEEK, model=model, strict_accounting=True)
+    assert out["run"]["status"] == "error" and model.stream_calls == 0
+
+
+def test_athena_failed_with_valid_stats_is_accounted_and_retried_once(monkeypatch):
+    fake = FakeAthena(bytes_scanned=0, state="FAILED")
+    use_fake(monkeypatch, fake)
+    LEDGER.reset(0.75)
+    with pytest.raises(backend.QueryError) as exc:
+        backend.run_query("q", "SELECT 1", [])
+    assert exc.value.error_type == "query_failed" and fake.starts == 2   # contract: retry once
+    assert not LEDGER.halted
+    assert all(e["settled"] and e["actual_usd"] is not None for e in LEDGER.entries)
+
+
+def test_athena_scan_above_reserved_bound_halts(monkeypatch):
+    from tools.budget import ATHENA_SCAN_CUTOFF_BYTES
+    fake = FakeAthena(bytes_scanned=ATHENA_SCAN_CUTOFF_BYTES + 1)
+    use_fake(monkeypatch, fake)
+    LEDGER.reset(0.75)
+    with pytest.raises(backend.QueryError) as exc:
+        backend.run_query("q", "SELECT 1", [])
+    assert exc.value.error_type == "uncertain" and fake.starts == 1
+    assert "exceeds the reserved bound" in LEDGER.halted
+
+
 def test_athena_missing_credentials_sends_nothing_and_halts(monkeypatch):
     def broken():
         raise RuntimeError("NoRegion: You must specify a region")
@@ -242,3 +324,27 @@ def test_batch_stops_at_first_unexpected_failure():
     assert out["totals"]["runs"] == 1 and "unexpected scenario failure" in out["totals"]["stopped_early"]
     run = out["results"][0]["runs"][0]
     assert "evidence_log" in run and "usage" in run and "model_attempts" in run["usage"]
+
+
+def test_tools_run_one_at_a_time(monkeypatch):
+    import agent.analyst as analyst
+    from strands.tools.executors import SequentialToolExecutor
+    seen = {}
+    real_agent = analyst.Agent
+
+    def capture(*args, **kwargs):
+        seen.update(kwargs)
+        return real_agent(*args, **kwargs)
+    monkeypatch.setattr(analyst, "Agent", capture)
+    run_analyst(WEEK, model=ScriptedModel([TOOL_STEPS[0], report]))
+    assert isinstance(seen["tool_executor"], SequentialToolExecutor)
+
+
+def test_evidence_is_saved_after_every_run(tmp_path):
+    import scripts.evaluate_agent as ev
+    path = tmp_path / "eval.json"
+    ev.evaluate(1, ["S1", "S2"], save_path=path,
+                model_factory=lambda key, t: ScriptedModel([report], tokens_per_call="realistic"))
+    saved = json.loads(path.read_text())
+    assert saved["totals"]["runs"] == 1                      # S1 saved before the batch stopped
+    assert "evidence_log" in saved["results"][0]["runs"][0]
