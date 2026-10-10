@@ -115,7 +115,7 @@ def _round(value, digits=2):
 
 
 def _clean_rows(rows_by_week: dict, warnings: list, label: str,
-                expected_groups: int | None = None) -> tuple[dict, set, set]:
+                expected_groups: int | None = None, compared: set | None = None) -> tuple[dict, set, set]:
     """Drop weeks that contain rows failing sanity checks, or (for totals) weeks
     where some state groups are missing, so bad data never becomes a number."""
     clean, invalid, incomplete = {}, set(), set()
@@ -129,9 +129,14 @@ def _clean_rows(rows_by_week: dict, warnings: list, label: str,
     if invalid:
         warnings.append(make_warning("INVALID_DATA", f"{label}: rows failing sanity checks excluded",
                                      weeks=sorted(invalid)))
-    if incomplete:
+    # NO_DATA (which makes the result partial) only when a COMPARED week is missing groups.
+    # A gap in an earlier baseline week leaves the reported values complete: that week is
+    # just left out of the baseline (listed in baseline.excluded_weeks; a too-short
+    # baseline raises INSUFFICIENT_HISTORY). Same treatment as INVALID_DATA above.
+    hit = incomplete if compared is None else incomplete & compared
+    if hit:
         warnings.append(make_warning("NO_DATA", f"{label}: some state groups missing; week excluded",
-                                     weeks=sorted(incomplete)))
+                                     weeks=sorted(hit)))
     return clean, invalid, incomplete
 
 
@@ -142,7 +147,8 @@ def _summarize_series(rows_by_week: dict, week: date, metric: str, metric_def: d
     """Current vs previous week, plus the z-score baseline, for one series."""
     if threshold is None:
         threshold = config.Z_THRESHOLD_SINGLE
-    rows_by_week, invalid, incomplete = _clean_rows(rows_by_week, warnings, label, expected_groups)
+    rows_by_week, invalid, incomplete = _clean_rows(rows_by_week, warnings, label, expected_groups,
+                                                    compared={week, week - ONE_WEEK})
     change_type = metric_def["change"]
     weeks = [week - ONE_WEEK * i for i in range(config.BASELINE_WEEKS + 1, -1, -1)]
     values = {w: _metric_value(rows_by_week.get(w), metric_def, table) for w in weeks}
@@ -200,6 +206,9 @@ def _summarize_series(rows_by_week: dict, week: date, metric: str, metric_def: d
         "is_unusual": None if z is None else abs(z) >= threshold,
     }
     compared = {week, previous_week}
+    excluded = sorted((invalid | incomplete) - compared)
+    if excluded:
+        result["baseline"]["excluded_weeks"] = excluded
     if compared & invalid:
         result["data_issue"] = "invalid"
     elif compared & incomplete:

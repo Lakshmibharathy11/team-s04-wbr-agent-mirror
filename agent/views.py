@@ -13,6 +13,10 @@ GUIDANCE = {
     "error": "This call failed. Do not report any value from it. Add it to 'unavailable'.",
     "partial": "Some values are missing or not final. Say so in any claim that uses this result.",
 }
+# An invalid input is the agent's own mistake, not missing data: fix it and call again
+VALIDATION_GUIDANCE = ("The input was invalid. Fix it using the error message and call again. "
+                       "Do not report any value from this call or cite it. If the corrected call "
+                       "succeeds, do not list this one under 'unavailable'.")
 
 
 def _series(d: dict) -> dict:
@@ -37,7 +41,9 @@ def concise_view(envelope: dict) -> dict:
         "compare_week": envelope["parameters"].get("compare_week"),
         "filters": envelope["parameters"].get("filters", {}),
     }
-    if envelope["status"] in GUIDANCE:
+    if (envelope.get("error") or {}).get("type") == "validation":
+        view["guidance"] = VALIDATION_GUIDANCE
+    elif envelope["status"] in GUIDANCE:
         view["guidance"] = GUIDANCE[envelope["status"]]
     if envelope["error"]:
         view["error"] = envelope["error"]["message"]

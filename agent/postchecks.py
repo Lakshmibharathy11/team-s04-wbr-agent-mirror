@@ -7,49 +7,109 @@ not silently changed or removed here (removal is the verifier's decision).
 
 import re
 
+from agent.evaluation import NAMES
+
 CAUSAL_PATTERN = re.compile(
-    r"\b(because|caused|causes|due to|led to|leads to|drove|driven by|as a result of|resulted in)\b",
+    r"\b(because|caused|causes|causing|due to|led to|leads to|lead to|leading to|drove|driven by|as a result of|resulted in|results in|resulting in|resulted from|results from|resulting from|attributed to|attributable to|stemming from)\b",
     re.IGNORECASE)
 WEAK_DATA = {"SMALL_SAMPLE", "INSUFFICIENT_HISTORY", "INVALID_DATA", "NO_DATA", "INCOMPLETE_WEEK",
              "ZERO_DENOMINATOR"}
 
 
-def _max_abs_z(envelope: dict) -> float:
-    data = envelope.get("data") or {}
+def _mentions(statement: str, group: str) -> bool:
+    """Same name forms the graders accept (agent/evaluation.py), but whole words only:
+    state codes are case-sensitive (SP, RJ) or written out (Rio de Janeiro); category
+    names may use spaces, underscores or & (health_beauty, health beauty, Health & Beauty)."""
+    if group == "Other":   # capitalized only, so ordinary prose ("other states") is not a group
+        return bool(re.search(r"(?<![A-Za-z0-9])Other(?![A-Za-z0-9])", statement))
+    for alias in NAMES.get(group, [group]):
+        if alias.isupper() and len(alias) == 2:
+            if re.search(rf"(?<![A-Za-z0-9]){alias}(?![A-Za-z0-9])", statement):
+                return True
+        else:
+            words = re.split(r"[_\s&]+", alias.lower())
+            pattern = r"[\s_&-]+".join(map(re.escape, words))
+            if re.search(rf"(?<![a-z0-9]){pattern}(?![a-z0-9])", statement.lower()):
+                return True
+    return False
+
+
+def _named_groups(env: dict, statement: str) -> list[dict]:
+    """The breakdown groups the claim's statement names.
+    Why: the agent picks groups by absolute_change or share, not by z-score rank, so
+    confidence must come from the group the claim is about, not from groups[0]."""
+    groups = (env.get("data") or {}).get("groups", [])
+    return [g for g in groups if g.get("group") and _mentions(statement, g["group"])]
+
+
+def _max_abs_z(env: dict, statement: str) -> float:
+    data = env.get("data") or {}
+    if env.get("tool_name") == "get_breakdown":
+        # Weakest named group (conservative: a claim is only as strong as its weakest group)
+        zs = [abs(g["z_score"]) if g.get("z_score") is not None else 0.0
+              for g in _named_groups(env, statement)]
+        return min(zs) if zs else 0.0
     zs = []
     if "z_score" in data:
         zs.append(data["z_score"])
-    for g in data.get("groups", [])[:1]:          # the top-ranked group
-        zs.append(g.get("z_score"))
     for m in data.get("metrics", {}).values():
         zs.append(m.get("z_score"))
     zs = [abs(z) for z in zs if z is not None]
     return max(zs) if zs else 0.0
 
 
-def _weak(env: dict) -> bool:
+def _weak(env: dict, statement: str) -> bool:
     """True if a cited result has a data-quality problem that should lower confidence.
-    For a breakdown, only the top-ranked group's own warnings count (problems in small,
-    unrelated groups do not weaken a claim about the top group)."""
+    For a breakdown, the warnings of the groups the claim names count (problems in
+    unrelated groups do not weaken it). A cited breakdown whose groups the claim does
+    not name counts as weak: code cannot tell which group the claim relies on."""
     if env["status"] == "error":
         return True
     codes = {w["code"] for w in env.get("warnings", [])}
     if env["tool_name"] == "get_breakdown":
-        groups = (env.get("data") or {}).get("groups", [])
-        top = set(groups[0].get("warnings", [])) if groups else {"NO_DATA"}
-        return bool((top & WEAK_DATA) or "INCOMPLETE_WEEK" in codes)
+        named = _named_groups(env, statement)
+        if not named:
+            return True
+        flags = set().union(*(set(g.get("warnings", [])) for g in named))
+        return bool((flags & WEAK_DATA) or "INCOMPLETE_WEEK" in codes)
     return env["status"] != "ok" or bool(codes & WEAK_DATA)
 
 
-def _confidence(cited: list[dict]) -> str:
+def _confidence(cited: list[dict], statement: str) -> str:
     """Preliminary rule (to confirm with the team):
     low    - any cited result has a data-quality problem (see _weak)
-    high   - the strongest cited signal has |z| >= 3
+    high   - the strongest cited signal has |z| >= 3 (for a breakdown: the named groups)
     medium - otherwise
     """
-    if not cited or any(_weak(e) for e in cited):
+    if not cited or any(_weak(e, statement) for e in cited):
         return "low"
-    return "high" if max(_max_abs_z(e) for e in cited) >= 3 else "medium"
+    return "high" if max(_max_abs_z(e, statement) for e in cited) >= 3 else "medium"
+
+
+def _corrected(call: dict, ctx) -> bool:
+    """A call rejected for invalid input (error type validation) that the agent then
+    made again correctly: same tool, metric and dimension, later step, status ok or
+    partial. That data was checked, so it is not unavailable and does not make the
+    report PARTIAL. Data errors (timeout, malformed_data, ...) always count."""
+    env = ctx.evidence_log.get(call["request_id"]) or {}
+    if (env.get("error") or {}).get("type") != "validation":
+        return False
+    key = (call["tool"], call["args"].get("metric"), call["args"].get("dimension"))
+    return any((c["tool"], c["args"].get("metric"), c["args"].get("dimension")) == key
+               and c["step"] > call["step"] and c["status"] in ("ok", "partial")
+               for c in ctx.calls)
+
+
+def _failure_note(call: dict, ctx) -> str:
+    """A readable line for the report, e.g.
+    'get_weekly_metric avg_review_score (state RJ) failed: timeout'."""
+    args = call["args"]
+    parts = [call["tool"]] + [str(args[k]) for k in ("metric", "dimension") if args.get(k)]
+    filters = ", ".join(f"{k} {args[k]}" for k in ("state", "category") if args.get(k))
+    if filters:
+        parts.append(f"({filters})")
+    error = (ctx.evidence_log.get(call["request_id"]) or {}).get("error") or {}
+    return " ".join(parts) + " failed" + (f": {error['type']}" if error.get("type") else "")
 
 
 def finalize(draft, ctx) -> dict:
@@ -73,7 +133,8 @@ def finalize(draft, ctx) -> dict:
             issues.append({"claim_id": claim_id, "issue": "causal_language",
                            "words": sorted({w.lower() for w in causal})})
 
-        confidence = _confidence([e for e in cited if e["status"] != "error"]) if valid else "low"
+        confidence = (_confidence([e for e in cited if e["status"] != "error"], c.statement)
+                      if valid else "low")
         claims.append({
             "claim_id": claim_id,
             "question_id": c.question_id,
@@ -89,8 +150,8 @@ def finalize(draft, ctx) -> dict:
     # Anything that failed is unavailable, whether or not the model listed it
     unavailable = list(draft.unavailable)
     for call in ctx.calls:
-        if call["status"] == "error":
-            note = f"{call['tool']} {call['args']} failed"
+        if call["status"] == "error" and not _corrected(call, ctx):
+            note = _failure_note(call, ctx)
             if note not in unavailable:
                 unavailable.append(note)
 

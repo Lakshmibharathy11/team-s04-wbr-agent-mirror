@@ -44,10 +44,11 @@ def make_tools(ctx: RunContext) -> list:
                       category: str | None = None) -> dict:
         """Split one metric by state or category to ATTRIBUTE a change: where did it happen?
 
-        Groups are sorted biggest movers first. For product_revenue, orders, and items,
-        share_of_total_change_pct shows each group's share of the total change.
-        Use rank and share to locate a detected change; a group's own is_unusual uses a
-        stricter threshold (|z| >= 3) because many groups are tested at once.
+        Every group is listed, ordered by z-score (not by size of change). For product_revenue,
+        orders, and items, absolute_change is each group's change and share_of_total_change_pct
+        its share of the total change. Pick groups by the plan's rule (absolute_change or
+        share), not by list position. A group's own is_unusual uses a stricter threshold
+        (|z| >= 3) because many groups are tested at once.
 
         Args:
             metric: Same metrics as get_weekly_metric.

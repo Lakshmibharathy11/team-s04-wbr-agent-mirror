@@ -368,7 +368,7 @@ def answer_keys():
             },
             {
                 "id": "S5_tool_failure", "week": "2018-07-02", "question_id": "Q2",
-                "planted": SCENARIOS[4]["description"],
+                "planted": next(x for x in SCENARIOS if x["id"] == "S5_tool_failure")["description"],
                 "run_with": {"WBR_SIMULATE_FAILURE": "avg_review_score"},
                 "expected": {
                     "review_score_status": "error",

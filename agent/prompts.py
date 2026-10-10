@@ -49,7 +49,9 @@ Rules:
 - Use only numbers that appear in tool results. Never calculate or estimate numbers yourself.
 - Every claim lists the request_id of each result it relies on in supporting_evidence.
 - Never say one change caused another. These words are not allowed: because, caused, causes,
-  due to, led to, leads to, drove, driven by, as a result of, resulted in.
+  causing, due to, led to, leads to, lead to, leading to, drove, driven by, as a result of,
+  resulted in, results in, resulting in, resulted from, results from, resulting from,
+  attributed to, attributable to, stemming from.
   Write "X fell; at the same time, Y fell" instead.
 - When two changes appear together in the same place, use claim_type observed_pattern and say the
   data does not establish a cause.

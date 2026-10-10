@@ -67,7 +67,7 @@
       "id": "S5_tool_failure",
       "week": "2018-07-02",
       "question_id": "Q2",
-      "planted": "Corrupted row: PR reports more late orders than delivered orders (impossible).",
+      "planted": "The review-score query fails (WBR_SIMULATE_FAILURE=avg_review_score); other metrics succeed.",
       "run_with": {
         "WBR_SIMULATE_FAILURE": "avg_review_score"
       },
