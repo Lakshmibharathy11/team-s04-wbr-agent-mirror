@@ -32,7 +32,9 @@ def make_tools(ctx: RunContext) -> list:
                 avg_delivery_days, cancellation_rate (cancellation_rate: no category filter).
             week: Monday of the week, e.g. 2018-06-04.
             state: Optional state group: SP, RJ, MG, RS, PR, BA, SC, Other.
-            category: Optional category group, e.g. health_beauty, or Other.
+            category: Optional category group, one of: bed_bath_table, sports_leisure,
+                health_beauty, furniture_decor, computers_accessories, housewares, watches_gifts,
+                telephony, cool_stuff, toys, garden_tools, auto, perfumery, baby, Other.
         """
         return _run("get_weekly_metric", wbr_tools.get_weekly_metric,
                     {"metric": metric, "week": week, "state": state, "category": category})
