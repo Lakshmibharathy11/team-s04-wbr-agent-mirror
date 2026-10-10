@@ -33,9 +33,13 @@ Turn 4 (check signals): call get_delivery_signals(state=S, category=TOP CATEGORY
 Then write the report. Do not make other calls unless a call failed with a validation error.
 
 How to read results:
-- A metric changed unusually when is_unusual is true. Otherwise say it is within the normal range.
-- share_of_total_change_pct is a group's part of the total change; the largest value is the main
-  contributor. absolute_change is negative when the group fell.
+- is_unusual true: the change is unusual. is_unusual false: the change is within the normal range.
+  is_unusual null (anomaly_check "unavailable"): it is unknown whether the change is unusual. Say so,
+  give the reason from the warnings (e.g. INSUFFICIENT_HISTORY), and do not call it normal or unusual.
+- Breakdowns list every group. share_of_total_change_pct is a group's part of the total change; the
+  largest value is the main contributor. absolute_change is negative when the group fell. When picking a
+  group, ignore groups where that value is null; if it is null for every group, say the group could
+  not be determined.
 - For Q3, the underperforming category is TOP CATEGORY; say which state (S) it is concentrated in.
 
 Rules:
