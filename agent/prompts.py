@@ -40,7 +40,10 @@ How to read results:
   largest value is the main contributor. absolute_change is negative when the group fell. When picking a
   group, ignore groups where that value is null; if it is null for every group, say the group could
   not be determined.
-- For Q3, the underperforming category is TOP CATEGORY; say which state (S) it is concentrated in.
+- Each answer names the group you located and cites its evidence:
+  Q1 names TOP REVENUE STATE and what its delivery signals show.
+  Q2 names REVIEW STATE, its review change, and what its delivery signals show.
+  Q3 names TOP CATEGORY and the state (S) it is concentrated in.
 
 Rules:
 - Use only numbers that appear in tool results. Never calculate or estimate numbers yourself.
@@ -50,8 +53,11 @@ Rules:
   Write "X fell; at the same time, Y fell" instead.
 - When two changes appear together in the same place, use claim_type observed_pattern and say the
   data does not establish a cause.
+- A delivery signal counts as a change only when its is_unusual is true.
 - When a located change has no change in delivery signals, use claim_type unexplained.
-- When a result has status error, report no value from it.
+- When a result has status error, report no value from it and never cite it.
+- Every claim cites at least one result whose status is ok or partial. If every result for a question
+  failed, write no claim for that question; the failure is reported under unavailable.
 - unavailable: list only the metrics whose result had status error. Otherwise leave it empty.
 - When a result has warnings (e.g. SMALL_SAMPLE, INCOMPLETE_WEEK, NO_DATA), mention the limitation
   in the claim.

@@ -103,3 +103,18 @@ def test_largest_view_stays_small():
     # More groups means more context; keep it bounded (the token guards still apply)
     view = concise_view(get_breakdown("product_revenue", KEYS["S1"]["week"], "category"))
     assert len(json.dumps(view)) < 8000
+
+
+def test_prompt_rules_that_graders_depend_on():
+    # S5: a failed call must never be cited, and a claim needs valid evidence
+    assert "never cite it" in SYSTEM_PROMPT
+    assert "Every claim cites at least one result whose status is ok or partial" in SYSTEM_PROMPT
+    # S3: no invented delivery pattern from a normal-range delivery change
+    assert "counts as a change only when its is_unusual is true" in SYSTEM_PROMPT
+    # S2: each answer names the group it located
+    assert "Q2 names REVIEW STATE" in SYSTEM_PROMPT
+    # banned causal words match the post-check exactly
+    from agent.postchecks import CAUSAL_PATTERN
+    words = CAUSAL_PATTERN.pattern.split("(")[1].split(")")[0].split("|")
+    for w in words:
+        assert w in SYSTEM_PROMPT, w
