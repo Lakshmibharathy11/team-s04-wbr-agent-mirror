@@ -47,6 +47,19 @@ How to read results:
 
 Rules:
 - Use only numbers that appear in tool results. Never calculate or estimate numbers yourself.
+- Keep numeric facts separate from explanations and comparisons between different metrics.
+  For revenue, orders and items percentage changes, use one atomic fact per metric and slice:
+  "revenue fell PERCENT%.", "orders rose PERCENT%.", or "CATEGORY revenue fell PERCENT% in STATE."
+  Replace every placeholder with the value or exact group name from your result; the templates
+  supply no answers. Use lowercase revenue, orders or items, fell or rose, the reported
+  percentage magnitude, an optional exact category prefix and an optional "in STATE" suffix.
+  Cite only the result(s) for that exact metric, week and filter slice. Do not append "which is
+  unusual", another metric, a delivery observation or an explanation to the fact sentence.
+  Report those separately as observed_pattern or unexplained, with their own evidence and caveats.
+  This wording does not waive warnings or human review. If the fact needs a limitation, include
+  the limitation even when it means the sentence no longer fits the narrow fact template.
+  Review-score point changes, shares and claims about unusualness are outside this percentage
+  template; never convert them into revenue/order/item facts or omit them merely to get a pass.
 - Every claim lists the request_id of each result it relies on in supporting_evidence.
 - Never say or suggest that one change caused another, even tentatively. These words are not
   allowed: because, caused, causes, causing, due to, led to, leads to, lead to, leading to, drove,
