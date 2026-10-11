@@ -18,6 +18,10 @@ This change does not alter confidence, quality thresholds, verifier defaults, hu
 
 ## Independent review and acceptance needed
 
+An offline policy diagnostic against the original saved tool envelopes supports three generated atomic assertions: revenue fell 15.32%; orders fell 9.89%; health_beauty revenue fell 49.6%. Each cites only its matching unfiltered-state metric result, and postchecks derive medium confidence with no human-review requirement. The proposed opt-in keeps those bounded assertions; the default still flags them. A regression verifies the postcheck/policy agreement, preserves a mandatory human-review flag when present, and checks that capture bytes and envelopes remain unchanged.
+
+These generated assertions are not the original model claims, a newly executed query, a new complete model report or proof of Q2/overall task coverage. The historical report remains PARTIAL. This positive diagnostic reduces uncertainty about the bounded policy's use on these particular captures; independent approval of the policy remains outstanding.
+
 Review the exact numeric policy before using it outside its synthetic tests. Evaluate whether its arithmetic rounding intervals, all-citations scope, quality thresholds and confidence rule are appropriate for real golden-data outputs. Reviewers must reconcile postcheck confidence with verifier confidence and preserve every mandatory coverage requirement.
 
 Full golden-data acceptance, independent code/policy review, browser layout review and freshly authorized corrected live validation remain outstanding. A COMPLETE numeric report would certify only its bounded selected facts under the configured policy; it would not prove causes, all prose or end-to-end usefulness to a real analyst.

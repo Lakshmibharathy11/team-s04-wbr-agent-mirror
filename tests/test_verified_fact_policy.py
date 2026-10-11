@@ -1,5 +1,7 @@
 """The opt-in policy is a proposal exercised only with synthetic evidence."""
 import unittest
+import json
+from pathlib import Path
 from copy import deepcopy
 
 from src.numeric_verifier import make_captured_verifier
@@ -9,6 +11,44 @@ from src.analyst_adapter import run_analyst_week
 
 
 class VerifiedFactPolicyTests(unittest.TestCase):
+    def test_recorded_atomic_facts_reconcile_with_postchecks_without_rewriting_capture(self):
+        from agent.postchecks import finalize
+        from agent.run_context import RunContext
+        from agent.schema import DraftClaim, DraftReport
+
+        path = Path(__file__).resolve().parents[1] / "runs" / "eval_20261010_115418.json"
+        original = path.read_bytes()
+        saved = json.loads(original.decode("utf-8-sig"))
+        scenario = next(s for s in saved["results"] if s["scenario"] == "S1_category_drop")
+        ctx = RunContext(scenario["week"])
+        ctx.evidence_log = deepcopy(scenario["runs"][0]["evidence_log"])
+        snapshot = deepcopy(ctx.evidence_log)
+        specs = [("product_revenue", None, "Q1", "revenue fell 15.32%."),
+                 ("orders", None, "Q1", "orders fell 9.89%."),
+                 ("product_revenue", "health_beauty", "Q3", "health_beauty revenue fell 49.6%.")]
+        claims = []
+        for metric, category, question, statement in specs:
+            rid = next(rid for rid, env in ctx.evidence_log.items()
+                       if env["tool_name"] == "get_weekly_metric"
+                       and env["parameters"].get("metric") == metric
+                       and env["parameters"].get("category") == category
+                       and env["parameters"].get("state") is None)
+            claims.append(DraftClaim(question_id=question, statement=statement,
+                                     claim_type="fact", supporting_evidence=[rid]))
+        # Diagnostic assertions only: not a replacement model report or a COMPLETE demo.
+        draft = finalize(DraftReport(claims=claims, actionable_questions=[], unavailable=[]), ctx)
+        default = make_captured_verifier(ctx.week)
+        proposal = make_captured_verifier(ctx.week, allow_verified_facts=True)
+        for claim in draft["claims"]:
+            self.assertFalse(claim["requires_human_review"])
+            self.assertEqual(claim["confidence"], "medium")
+            self.assertEqual(default(claim, ctx.evidence_log)["outcome"], "flag")
+            self.assertEqual(proposal(claim, ctx.evidence_log)["outcome"], "keep")
+            requires_review = {**claim, "requires_human_review": True}
+            self.assertEqual(proposal(requires_review, ctx.evidence_log)["outcome"], "flag")
+        self.assertEqual(ctx.evidence_log, snapshot)
+        self.assertEqual(path.read_bytes(), original)
+
     def setUp(self):
         fixture = numeric.NumericVerifierTests()
         fixture.setUp()
