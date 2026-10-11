@@ -14,7 +14,9 @@ acceptance policy in src/ are Franklyn's and are used as they are.
 
 from copy import deepcopy
 
+from agent.postchecks import wrong_week
 from agent.runner_bridge import run_captured
+from src.wbr_contract import ContractError
 
 # Engineering contract: the tools every analyst run is expected to cover. Fixed here,
 # never derived from the calls a run made, so an omitted tool shows as missing.
@@ -40,8 +42,21 @@ def capture(run: dict) -> dict:
     }
 
 
+def check_weeks(captured: dict, week: str) -> None:
+    """Reject a capture whose evidence is not for the replay week. A result's own
+    previous week and baseline are part of that result, so they are valid; a result
+    for a different report week (e.g. 2018-08-20 in a 2018-08-13 report) is not."""
+    off = sorted(rid for rid, env in captured["evidence_log"].items() if wrong_week(env, week))
+    if off:
+        raise ContractError(f"evidence week mismatch: {len(off)} result(s) not for week {week}: "
+                            + ", ".join(off))
+
+
 def replay(run: dict, week: str, *, expected_tool_names=EXPECTED_TOOLS, verifier=None,
            renderer=None, label: str = "PRIVATE_CAPTURE_REPLAY"):
-    """Replay one captured run through the bridge. Returns the runner's RunResult."""
-    return run_captured(capture(run), week=week, expected_tool_names=expected_tool_names,
+    """Replay one captured run through the bridge. Returns the runner's RunResult.
+    Raises ContractError if any evidence is for a different week."""
+    captured = capture(run)
+    check_weeks(captured, week)
+    return run_captured(captured, week=week, expected_tool_names=expected_tool_names,
                         verifier=verifier, renderer=renderer, label=label)

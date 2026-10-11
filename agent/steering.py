@@ -97,7 +97,9 @@ class AnalystSteering(HookProvider):
             # Keep investigating only if this call AND a final report call would both fit
             if self.max_tokens is not None and self.used_tokens + 2 * reserve > self.max_tokens:
                 self.token_cap_hit = True
-                self._start_wrap_up(event, f"Token budget nearly used ({self.used_tokens:,} of {self.max_tokens:,}).")
+                self._start_wrap_up(event, f"Token budget: {self.used_tokens:,} used of {self.max_tokens:,}; "
+                                           f"another investigation call plus the report call would reserve "
+                                           f"{2 * reserve:,} tokens (worst case), which would not fit.")
                 return
         if self.max_tokens is not None and self.used_tokens + reserve > self.max_tokens:
             self.token_cap_hit = True
@@ -165,7 +167,7 @@ class AnalystSteering(HookProvider):
             return
         # Fill defaults so equivalent calls compare equal
         defaults = {"state": None, "category": None}
-        full_args = {**defaults, **args}
+        full_args = {**defaults, **args, "week": self.ctx.week}   # week is bound to the run
         earlier = self.ctx.previous_result(name, full_args)
         if earlier:
             message = (f"You already made this exact call; its result is {earlier}. "

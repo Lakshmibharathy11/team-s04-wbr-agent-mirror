@@ -7,13 +7,67 @@ not silently changed or removed here (removal is the verifier's decision).
 
 import re
 
+from datetime import date, timedelta
+
 from agent.evaluation import NAMES
+from tools import config
 
 CAUSAL_PATTERN = re.compile(
-    r"\b(because|caused|causes|causing|due to|led to|leads to|lead to|leading to|drove|driven by|as a result of|resulted in|results in|resulting in|resulted from|results from|resulting from|attributed to|attributable to|stemming from)\b",
+    r"\b(because|caused|causes|causing|due to|led to|leads to|lead to|leading to|drove|driven by|as a result of|resulted in|results in|resulting in|resulted from|results from|resulting from|attributed to|attributable to|stemming from|contribute|contributes|contributed|contributing|contributor|contributors|may have|might have|could have|likely|impact|impacts|impacted|affect|affects|affected|explains|explained by|owing to|thanks to|triggered|triggers|triggering|spurred|fueled|fuelled|prompted|explain)\b",
     re.IGNORECASE)
 WEAK_DATA = {"SMALL_SAMPLE", "INSUFFICIENT_HISTORY", "INVALID_DATA", "NO_DATA", "INCOMPLETE_WEEK",
              "ZERO_DENOMINATOR"}
+
+
+# Groups never overlap: "Other" is everything not listed separately, so one group can
+# never include, contain or be part of another group of the same dimension.
+CONTAINMENT = re.compile(
+    r"\b(includ\w*|contain\w*|compris\w*|consist\w* of|part of|subset of|belong\w* to|"
+    r"made up of|is within|are within|covered by|covers)\b", re.IGNORECASE)
+
+
+def _group_spans(statement: str, groups) -> list[tuple[int, str]]:
+    found = []
+    for g in groups:
+        if g == "Other":
+            pats = [r"(?<![A-Za-z0-9])Other(?![A-Za-z0-9])"]
+        else:
+            pats = []
+            for alias in NAMES.get(g, [g]):
+                if alias.isupper() and len(alias) == 2:
+                    pats.append(rf"(?<![A-Za-z0-9]){alias}(?![A-Za-z0-9])")
+                else:
+                    words = re.split(r"[_\s&]+", alias.lower())
+                    pats.append("(?i)(?<![a-z0-9])" + r"[\s_&-]+".join(map(re.escape, words)) + "(?![a-z0-9])")
+        for pat in pats:
+            found += [(m.start(), m.end(), g) for m in re.finditer(pat, statement)]
+    return sorted(found)
+
+
+def group_relationship(statement: str) -> list[str]:
+    """Pairs of same-dimension groups the statement links with a containment word,
+    e.g. "the 'Other' state, which includes the 'SP' state" -> ["Other includes SP"]."""
+    out = []
+    for groups in (config.STATE_GROUPS, config.CATEGORY_GROUPS):
+        spans = _group_spans(statement, groups)
+        for i, (_, a_end, a) in enumerate(spans):
+            for b_start, _, b in spans[i + 1:]:
+                gap = statement[a_end:b_start]
+                if b != a and len(gap) <= 60 and CONTAINMENT.search(gap):
+                    out.append(f"{a} {CONTAINMENT.search(gap).group(0)} {b}")
+    return out
+
+
+def wrong_week(env: dict, week: str) -> bool:
+    """True if a result is not for the report week (its own previous week and baseline
+    are part of that same result, so they are valid)."""
+    params = env.get("parameters") or {}
+    if params.get("week") != week:
+        return True
+    compare = params.get("compare_week")
+    if compare is None:
+        return False   # e.g. a failed call: no comparison was made
+    return compare != (date.fromisoformat(week) - timedelta(days=7)).isoformat()
 
 
 def _mentions(statement: str, group: str) -> bool:
@@ -114,6 +168,14 @@ def finalize(draft, ctx) -> dict:
             issues.append({"claim_id": claim_id, "issue": "no_valid_evidence"})
         if failed:
             issues.append({"claim_id": claim_id, "issue": "cites_failed_call", "request_ids": failed})
+        week = getattr(ctx, "week", None)
+        off_week = [rid for rid in valid if week and wrong_week(ctx.evidence_log[rid], week)]
+        if off_week:
+            issues.append({"claim_id": claim_id, "issue": "evidence_wrong_week",
+                           "request_ids": off_week, "report_week": week})
+        links = group_relationship(c.statement)
+        if links:
+            issues.append({"claim_id": claim_id, "issue": "group_relationship", "links": links})
         causal = CAUSAL_PATTERN.findall(c.statement)
         if causal:
             issues.append({"claim_id": claim_id, "issue": "causal_language",

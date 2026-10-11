@@ -161,7 +161,6 @@ def test_numeric_verifier_reads_the_original_capture():
 @pytest.mark.parametrize("bad, fixed", [
     ({"category": "beauty"}, {"category": "health_beauty"}),           # different category
     ({"state": "XX"}, {"state": "SP"}),                                # different state
-    ({"week": "2018-08-07"}, {}),                                      # different (non-Monday) week
 ])
 def test_failed_request_stays_visible_after_a_later_success(bad, fixed):
     week = KEYS["S1"]["week"]
@@ -180,3 +179,17 @@ def test_failed_request_stays_visible_after_a_later_success(bad, fixed):
     assert [r["request_id"] for r in failed] == [errors[0]["request_id"]]
     assert res.status == "partial"
     assert res.renderer_input["analyst_draft"]["unavailable"] == out["report_draft"]["unavailable"]
+
+
+def test_failed_request_stays_visible_across_weeks():
+    # The week is bound to the run, so a failure for one week cannot be "cleared" by any
+    # call: here a real failure (simulated timeout) is followed by an unrelated success.
+    week = KEYS["S5"]["week"]
+    steps = [call("get_weekly_metric", metric="avg_review_score", week="2018-01-01"),
+             call("get_weekly_metric", metric="product_revenue", week=week),
+             report(("Q1", "Revenue changed this week.", "fact", [1]))]
+    out = offline_run("S5", steps)
+    failed = [c for c in out["calls"] if c["status"] == "error"]
+    assert len(failed) == 1 and failed[0]["args"]["week"] == week
+    res = replay(out, week)
+    assert res.status == "partial" and [r for r in res.tool_results if r["status"] == "error"]

@@ -29,10 +29,13 @@ class RunContext:
     def previous_result(self, tool_name: str, args: dict) -> str | None:
         return self._seen.get(self.signature(tool_name, args))
 
-    def record(self, tool_name: str, args: dict, envelope: dict) -> None:
+    def record(self, tool_name: str, args: dict, envelope: dict, requested_week: str | None = None) -> None:
         request_id = envelope["request_id"]
         self.evidence_log[request_id] = envelope
         self._seen[self.signature(tool_name, args)] = request_id
-        self.calls.append({"step": len(self.calls) + 1, "tool": tool_name, "args": args,
-                           "request_id": request_id, "status": envelope["status"],
-                           "warnings": [w["code"] for w in envelope.get("warnings", [])]})
+        call = {"step": len(self.calls) + 1, "tool": tool_name, "args": args,
+                "request_id": request_id, "status": envelope["status"],
+                "warnings": [w["code"] for w in envelope.get("warnings", [])]}
+        if requested_week:
+            call["requested_week"] = requested_week   # model asked for another week; overridden
+        self.calls.append(call)

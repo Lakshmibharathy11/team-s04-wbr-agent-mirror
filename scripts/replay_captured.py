@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from agent.replay import EXPECTED_TOOLS, replay  # noqa: E402
+from src.wbr_contract import ContractError       # noqa: E402
 
 
 def main() -> int:
@@ -30,7 +31,13 @@ def main() -> int:
     out = []
     for result in saved["results"]:
         for trial in result["runs"]:
-            res = replay(trial, result["week"], label=args.label)
+            try:
+                res = replay(trial, result["week"], label=args.label)
+            except ContractError as exc:   # rejected at the boundary (e.g. evidence week mismatch)
+                print(f"\n{result['scenario']} week {result['week']}: REJECTED ({exc})")
+                out.append({"scenario": result["scenario"], "week": result["week"],
+                            "trial": trial.get("trial"), "status": "rejected", "reason": str(exc)})
+                continue
             draft = trial.get("report_draft") or {}
             print(f"\n{result['scenario']} week {result['week']}: bridge {res.status} "
                   f"(analyst draft {draft.get('draft_status')}, unavailable {len(draft.get('unavailable', []))}, "
