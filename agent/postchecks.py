@@ -11,6 +11,7 @@ from datetime import date, timedelta
 
 from agent.evaluation import NAMES
 from tools import config
+from src.period_guard import period_problem
 
 CAUSAL_PATTERN = re.compile(
     r"\b(because|caused|causes|causing|due to|led to|leads to|lead to|leading to|drove|driven by|as a result of|resulted in|results in|resulting in|resulted from|results from|resulting from|attributed to|attributable to|stemming from|contribute|contributes|contributed|contributing|contributor|contributors|may have|might have|could have|likely|impact|impacts|impacted|affect|affects|affected|explains|explained by|owing to|thanks to|triggered|triggers|triggering|spurred|fueled|fuelled|prompted|explain)\b",
@@ -61,13 +62,7 @@ def group_relationship(statement: str) -> list[str]:
 def wrong_week(env: dict, week: str) -> bool:
     """True if a result is not for the report week (its own previous week and baseline
     are part of that same result, so they are valid)."""
-    params = env.get("parameters") or {}
-    if params.get("week") != week:
-        return True
-    compare = params.get("compare_week")
-    if compare is None:
-        return False   # e.g. a failed call: no comparison was made
-    return compare != (date.fromisoformat(week) - timedelta(days=7)).isoformat()
+    return period_problem(env, week) is not None
 
 
 def _mentions(statement: str, group: str) -> bool:
@@ -155,6 +150,9 @@ def _failure_note(call: dict, ctx) -> str:
 def finalize(draft, ctx) -> dict:
     """Turn the model's draft into the V1 report draft, plus pre-check notes."""
     claims, issues = [], []
+    period_issues = {rid: period_problem(env, ctx.week)
+                     for rid, env in ctx.evidence_log.items()} if hasattr(ctx, "week") else {}
+    period_issues = {rid: issue for rid, issue in period_issues.items() if issue}
     for i, c in enumerate(draft.claims, start=1):
         claim_id = f"c{i}"
         valid = [rid for rid in c.supporting_evidence if rid in ctx.evidence_log]
@@ -173,6 +171,9 @@ def finalize(draft, ctx) -> dict:
         if off_week:
             issues.append({"claim_id": claim_id, "issue": "evidence_wrong_week",
                            "request_ids": off_week, "report_week": week})
+            for issue in sorted({period_issues[rid] for rid in off_week}):
+                issues.append({"claim_id": claim_id, "issue": issue,
+                               "request_ids": [rid for rid in off_week if period_issues[rid] == issue]})
         links = group_relationship(c.statement)
         if links:
             issues.append({"claim_id": claim_id, "issue": "group_relationship", "links": links})
@@ -183,6 +184,8 @@ def finalize(draft, ctx) -> dict:
 
         confidence = (_confidence([e for e in cited if e["status"] != "error"], c.statement)
                       if valid else "low")
+        if off_week:
+            confidence = "low"
         claims.append({
             "claim_id": claim_id,
             "question_id": c.question_id,
@@ -197,6 +200,8 @@ def finalize(draft, ctx) -> dict:
 
     # Anything that failed is unavailable, whether or not the model listed it
     unavailable = list(draft.unavailable)
+    for rid, issue in period_issues.items():
+        unavailable.append(f"{rid}: {issue}; evidence cannot support run week {ctx.week}")
     for call in ctx.calls:
         if call["status"] == "error":   # every failed call stays visible, retried or not
             note = _failure_note(call, ctx)
