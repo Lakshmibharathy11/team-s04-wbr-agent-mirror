@@ -8,7 +8,7 @@ Maxime's renderer work is being covered by Franklyn's integration workstream. At
 
 `src/report_renderer.py` takes the shared runner's verifier output. Confirmed findings need a keep outcome, usable evidence, the correct period and no human-review flag. Flagged/downgraded findings stay visibly unconfirmed. Missing or failed citations withhold claim text. Any off-period evidence rejects presentation. Removed claim text, raw draft and transcript are never copied into the HTML. Dynamic text is escaped; no remote assets or JavaScript are included.
 
-The renderer presents recorded metric values and query provenance. It does not independently establish query authenticity, arbitrary prose truth or causation. Complete means the selected claims passed the configured verifier, not that the model's general reliability is proven.
+The renderer presents recorded metric values and query provenance. It does not independently establish query authenticity, arbitrary prose truth or causation. Whole-report COMPLETE is deliberately withheld. Kept individual claims do not establish mandatory report coverage or general model reliability.
 
 ## Run offline
 
@@ -62,3 +62,9 @@ The guide also requires AWS Community Day registration and in-person attendance 
 197 tests and 43 subtests pass using the network-blocked launcher. Eleven golden-database tests remain excluded. Browser visual QA is NOT RUN: the environment lacks Chromium, and the browser download returned an invalid archive. HTML content, escape behavior, citation links and failure states are tested; desktop/mobile layout still needs a browser check. Independent teammate review, full golden-data/bridge integration and corrected live evaluation remain pending. No claim of READY_TO_SUBMIT is made.
 
 If Maxime returns, useful remaining bounded work includes independent renderer review, browser/device QA, recording rehearsal, or writeup/template formatting. Any code he brings should be reviewed against the current candidate rather than discarded.
+
+## Final preparation checkpoint
+
+The executable source at a071406 received Claude GO for offline integration only. The selected network-blocked suite was reproduced: 223 tests and 47 subtests passed, with exactly ten database-dependent checks excluded. Chromium 153 checks at 1440×900 and 390×844 loaded all four pages without horizontal overflow or broken anchors; index navigation, claim evidence links and query-provenance expanders worked at both widths. Warning headers are readable but lengthy on mobile; scroll to the review findings during recording. No verifier policy or executable source was changed by this documentation checkpoint.
+
+Lakshmi has been asked to own both video recording and final submission, with explicit acceptance and ETAs required. Her response and golden.duckdb handoff remain pending. The exact checklist and provisional recording package are prepared. Real-user/manual-cost facts, release and submission approvals, the golden checks and corrected live validation remain open. A delegated submission owner must reconcile the organizer requirement that the team lead submit.
