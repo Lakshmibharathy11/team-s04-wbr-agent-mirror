@@ -16,7 +16,7 @@ TESTS = (
     "test_verified_fact_policy", "test_renderer_boundary", "test_health_diagnostics",
     "test_lakshmi_handoff", "test_lakshmi_verifier_cases",
     "test_analyst_initialization_failure", "test_week_and_wording",
-    "test_analyst_adapter", "test_real_olist_acceptance", "test_views",
+    "test_analyst_adapter", "test_real_olist_acceptance", "test_views", "test_report_renderer",
 )
 EXCLUDED = (
     "golden", "model_cannot_choose", "wrong_week_repeat", "replay_rejects",
