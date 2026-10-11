@@ -1,0 +1,78 @@
+{
+  "label": "SYNTHETIC",
+  "status": "complete",
+  "tool_results": [
+    {
+      "tool_name": "weekly_revenue",
+      "request_id": "synthetic-weekly_revenue",
+      "status": "ok",
+      "generated_at": "2026-10-05T00:00:00+00:00",
+      "parameters": {"dataset": "SYNTHETIC"},
+      "data": {"prior": 1000.0, "current": 800.0, "pct_change": -20.0},
+      "evidence_refs": ["synthetic:weekly_revenue"],
+      "warnings": [],
+      "error": null
+    },
+    {
+      "tool_name": "weekly_orders",
+      "request_id": "synthetic-weekly_orders",
+      "status": "ok",
+      "generated_at": "2026-10-05T00:00:00+00:00",
+      "parameters": {"dataset": "SYNTHETIC"},
+      "data": {"prior": 4, "current": 4, "pct_change": 0.0},
+      "evidence_refs": ["synthetic:weekly_orders"],
+      "warnings": [],
+      "error": null
+    },
+    {
+      "tool_name": "weekly_review_score",
+      "request_id": "synthetic-weekly_review_score",
+      "status": "ok",
+      "generated_at": "2026-10-05T00:00:00+00:00",
+      "parameters": {"dataset": "SYNTHETIC"},
+      "data": {"prior": 4.0, "current": 3.0},
+      "evidence_refs": ["synthetic:weekly_review_score"],
+      "warnings": [],
+      "error": null
+    },
+    {
+      "tool_name": "category_breakdown",
+      "request_id": "synthetic-category_breakdown",
+      "status": "ok",
+      "generated_at": "2026-10-05T00:00:00+00:00",
+      "parameters": {"dataset": "SYNTHETIC"},
+      "data": {"note": "placeholder; final payload owned by data workstream"},
+      "evidence_refs": ["synthetic:category_breakdown"],
+      "warnings": [],
+      "error": null
+    },
+    {
+      "tool_name": "state_breakdown",
+      "request_id": "synthetic-state_breakdown",
+      "status": "ok",
+      "generated_at": "2026-10-05T00:00:00+00:00",
+      "parameters": {"dataset": "SYNTHETIC"},
+      "data": {"note": "placeholder; final payload owned by data workstream"},
+      "evidence_refs": ["synthetic:state_breakdown"],
+      "warnings": [],
+      "error": null
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "synthetic-revenue",
+      "question_id": "q1",
+      "statement": "Synthetic revenue declined by 20 percent week over week.",
+      "claim_type": "fact",
+      "confidence": null,
+      "supporting_evidence": ["synthetic:weekly_revenue"],
+      "causal_language_allowed": false,
+      "requires_human_review": false,
+      "verifier_outcome": "keep",
+      "verifier_reason": "evidence available"
+    }
+  ],
+  "removed_claims": [],
+  "warnings": []
+}
+

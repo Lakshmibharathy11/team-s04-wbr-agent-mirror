@@ -1,0 +1,2381 @@
+{
+  "run_at": "2026-10-10T02:08:10+00:00",
+  "commit": "0c15164",
+  "provider": "ollama",
+  "model": "qwen2.5:3b",
+  "region": "us-east-2",
+  "backend": "duckdb",
+  "workgroup": "S04-WBR",
+  "database": "s04_wbr",
+  "scenarios": [
+    "S1_category_drop"
+  ],
+  "trials": 1,
+  "limits": {
+    "runs": 1,
+    "per_run": {
+      "tool_calls": 25,
+      "cumulative_tokens": 300000,
+      "output_tokens_per_response": 2000,
+      "reserved_tokens_per_model_call": 130000,
+      "model_attempts": 30,
+      "sdk_retries": 0,
+      "soft_investigation_limit_s": 3600.0,
+      "bedrock_read_timeout_s": 120,
+      "athena_query_timeout_s": 30
+    },
+    "batch": {
+      "model_attempts": 30,
+      "athena_start_attempts": 0,
+      "budget_ceiling_usd": null
+    },
+    "upper_bound_usd": {
+      "bedrock": 0.042,
+      "athena_and_s3": 0.0,
+      "total": 0.042
+    },
+    "prices": {
+      "input_per_million": 0.035,
+      "output_per_million": 0.14,
+      "athena_per_tb": 5.0,
+      "athena_scan_cutoff": "100 MiB per query"
+    }
+  },
+  "totals": {
+    "runs": 1,
+    "runs_planned": 1,
+    "input_tokens": 9555,
+    "output_tokens": 42211,
+    "estimated_bedrock_usd": 0.006244,
+    "model_attempts": 3,
+    "athena_start_attempts": 0,
+    "athena_bytes_scanned": 0,
+    "ledger": {
+      "ceiling_usd": null,
+      "spent_usd_upper_estimate": 0.0,
+      "still_reserved_usd": 0,
+      "halted": null,
+      "entries": 0
+    },
+    "seconds": 4946.9,
+    "stopped_early": "S1_category_drop trial 1: run error: StructuredOutputException: The model failed to invoke the structured output tool even after it was forced."
+  },
+  "ledger_entries": [],
+  "athena_receipts": [],
+  "results": [
+    {
+      "scenario": "S1_category_drop",
+      "week": "2018-08-13",
+      "trials_run": 1,
+      "passed": 0,
+      "pass_rate": 0.0,
+      "pass_at_k": false,
+      "pass_all_k": false,
+      "runs": [
+        {
+          "trial": 1,
+          "passed": false,
+          "checks": {
+            "run completed": false
+          },
+          "error": "StructuredOutputException: The model failed to invoke the structured output tool even after it was forced.",
+          "process": {},
+          "run_status": "error",
+          "run_error": "StructuredOutputException: The model failed to invoke the structured output tool even after it was forced.",
+          "usage": {
+            "input_tokens": 9555,
+            "output_tokens": 42211,
+            "total_tokens": 51766,
+            "guard_counted_tokens": 51766,
+            "token_cap": 300000,
+            "token_cap_hit": false,
+            "wrap_up": false,
+            "reserved_tokens_per_call": 130000,
+            "model_calls": 3,
+            "model_call_limit": 30,
+            "model_calls_cancelled": 2,
+            "model_attempts": [
+              {
+                "attempt": 1,
+                "sent_at": "2026-10-10T00:45:44+00:00",
+                "ledger_id": null,
+                "reserved_input_tokens": 128000,
+                "projected_input_tokens": 2960,
+                "reserved_output_tokens": 2000,
+                "wrap_up_call": false,
+                "status": "ok",
+                "input_tokens": 1679,
+                "output_tokens": 964,
+                "stop_reason": "tool_use"
+              },
+              {
+                "attempt": 2,
+                "sent_at": "2026-10-10T00:47:44+00:00",
+                "ledger_id": null,
+                "reserved_input_tokens": 128000,
+                "projected_input_tokens": 4593,
+                "reserved_output_tokens": 2000,
+                "wrap_up_call": false,
+                "status": "ok",
+                "input_tokens": 3878,
+                "output_tokens": 287,
+                "stop_reason": "tool_use"
+              },
+              {
+                "attempt": 3,
+                "sent_at": "2026-10-10T00:49:04+00:00",
+                "ledger_id": null,
+                "reserved_input_tokens": 128000,
+                "projected_input_tokens": 5727,
+                "reserved_output_tokens": 2000,
+                "wrap_up_call": false,
+                "status": "exceeded_reservation",
+                "input_tokens": 3998,
+                "output_tokens": 40960,
+                "stop_reason": "tool_use"
+              }
+            ],
+            "http_requests": [],
+            "stop_reason": "model usage exceeded its reservation",
+            "athena_queries": 0,
+            "athena_bytes_scanned": 0,
+            "athena_receipts": [],
+            "seconds": 4946.9
+          },
+          "report_draft": null,
+          "evidence_log": {
+            "req-7432859b77c0": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-7432859b77c0",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "metric": "product_revenue",
+                "week": "2018-08-13",
+                "state": null,
+                "category": "health_beauty",
+                "compare_week": "2018-08-06",
+                "grain": "week x category_group x state_group",
+                "filters": {
+                  "category_group": "health_beauty"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "product_revenue",
+                "current": 20404.77,
+                "previous": 40482.91,
+                "change": -49.6,
+                "change_type": "pct",
+                "current_base": 132,
+                "previous_base": 240,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": -13.38,
+                  "spread_change": 13.57
+                },
+                "z_score": -2.67,
+                "z_threshold": 2.0,
+                "is_unusual": true
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_product_revenue_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_category_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-a2e7205e6c67": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-a2e7205e6c67",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "metric": "orders",
+                "week": "2018-08-13",
+                "state": null,
+                "category": "health_beauty",
+                "compare_week": "2018-08-06",
+                "grain": "week x category_group x state_group",
+                "filters": {
+                  "category_group": "health_beauty"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "orders",
+                "current": 132,
+                "previous": 240,
+                "change": -45.0,
+                "change_type": "pct",
+                "current_base": 132,
+                "previous_base": 240,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": -1.83,
+                  "spread_change": 36.73
+                },
+                "z_score": -1.18,
+                "z_threshold": 2.0,
+                "is_unusual": false
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_orders_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_category_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-48c4c04318de": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-48c4c04318de",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "metric": "avg_order_value",
+                "week": "2018-08-13",
+                "state": null,
+                "category": "health_beauty",
+                "compare_week": "2018-08-06",
+                "grain": "week x category_group x state_group",
+                "filters": {
+                  "category_group": "health_beauty"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "avg_order_value",
+                "current": 154.58,
+                "previous": 168.68,
+                "change": -8.36,
+                "change_type": "pct",
+                "current_base": 132,
+                "previous_base": 240,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": 3.59,
+                  "spread_change": 26.51
+                },
+                "z_score": -0.45,
+                "z_threshold": 2.0,
+                "is_unusual": false
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_avg_order_value_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_category_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-1811556cf6ea": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-1811556cf6ea",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "metric": "avg_review_score",
+                "week": "2018-08-13",
+                "state": null,
+                "category": "health_beauty",
+                "compare_week": "2018-08-06",
+                "grain": "week x category_group x state_group",
+                "filters": {
+                  "category_group": "health_beauty"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "avg_review_score",
+                "current": 4.55,
+                "previous": 4.28,
+                "change": 0.27,
+                "change_type": "points",
+                "current_base": 132,
+                "previous_base": 239,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": 0.02,
+                  "spread_change": 0.15
+                },
+                "z_score": 1.66,
+                "z_threshold": 2.0,
+                "is_unusual": false,
+                "current_review_coverage_pct": 100.0,
+                "previous_review_coverage_pct": 99.58
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_avg_review_score_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_category_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-4e66f880397e": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-4e66f880397e",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": null,
+                "category": "health_beauty",
+                "compare_week": "2018-08-06",
+                "grain": "week x category_group x state_group",
+                "filters": {
+                  "category_group": "health_beauty"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 1.52,
+                    "previous": 11.11,
+                    "change": -9.6,
+                    "change_type": "points",
+                    "current_base": 132,
+                    "previous_base": 234,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.2,
+                      "spread_change": 5.58
+                    },
+                    "z_score": -1.76,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  },
+                  "avg_delivery_days": {
+                    "current": 8.92,
+                    "previous": 8.85,
+                    "change": 0.8,
+                    "change_type": "pct",
+                    "current_base": 132,
+                    "previous_base": 234,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.21,
+                      "spread_change": 25.27
+                    },
+                    "z_score": 0.02,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_category_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 2 events (late_orders)",
+                  "details": {
+                    "events": 2,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-29628e6fe6c9": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-29628e6fe6c9",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "SP",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "SP"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 6.01,
+                    "previous": 13.51,
+                    "change": -7.5,
+                    "change_type": "points",
+                    "current_base": 815,
+                    "previous_base": 881,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.21,
+                      "spread_change": 0.66
+                    },
+                    "z_score": -11.0,
+                    "z_threshold": 2.0,
+                    "is_unusual": true
+                  },
+                  "avg_delivery_days": {
+                    "current": 6.26,
+                    "previous": 6.69,
+                    "change": -6.47,
+                    "change_type": "pct",
+                    "current_base": 815,
+                    "previous_base": 881,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -1.14,
+                      "spread_change": 12.19
+                    },
+                    "z_score": -0.44,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-f00b150194df": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-f00b150194df",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "RJ",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "RJ"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 3.88,
+                    "previous": 6.45,
+                    "change": -2.57,
+                    "change_type": "points",
+                    "current_base": 232,
+                    "previous_base": 217,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.28,
+                      "spread_change": 0.5
+                    },
+                    "z_score": -4.56,
+                    "z_threshold": 2.0,
+                    "is_unusual": true
+                  },
+                  "avg_delivery_days": {
+                    "current": 8.07,
+                    "previous": 8.77,
+                    "change": -7.99,
+                    "change_type": "pct",
+                    "current_base": 232,
+                    "previous_base": 217,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 4.73,
+                      "spread_change": 9.12
+                    },
+                    "z_score": -1.39,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 9 events (late_orders)",
+                  "details": {
+                    "events": 9,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-2244381ef8c6": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-2244381ef8c6",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "MG",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "MG"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 0.0,
+                    "previous": 2.86,
+                    "change": -2.86,
+                    "change_type": "points",
+                    "current_base": 184,
+                    "previous_base": 210,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.0,
+                      "spread_change": 0.95
+                    },
+                    "z_score": -3.01,
+                    "z_threshold": 2.0,
+                    "is_unusual": true
+                  },
+                  "avg_delivery_days": {
+                    "current": 7.25,
+                    "previous": 7.9,
+                    "change": -8.28,
+                    "change_type": "pct",
+                    "current_base": 184,
+                    "previous_base": 210,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.75,
+                      "spread_change": 8.16
+                    },
+                    "z_score": -1.11,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 0 events (late_orders)",
+                  "details": {
+                    "events": 0,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-dc196700f7f3": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-dc196700f7f3",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "RS",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "RS"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 2.08,
+                    "previous": 4.59,
+                    "change": -2.5,
+                    "change_type": "points",
+                    "current_base": 96,
+                    "previous_base": 109,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.18,
+                      "spread_change": 4.97
+                    },
+                    "z_score": -0.54,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  },
+                  "avg_delivery_days": {
+                    "current": 10.56,
+                    "previous": 10.58,
+                    "change": -0.15,
+                    "change_type": "pct",
+                    "current_base": 96,
+                    "previous_base": 109,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 2.83,
+                      "spread_change": 11.05
+                    },
+                    "z_score": -0.27,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 2 events (late_orders)",
+                  "details": {
+                    "events": 2,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-24fdb3a60ac1": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-24fdb3a60ac1",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "PR",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "PR"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 0.0,
+                    "previous": 7.34,
+                    "change": -7.34,
+                    "change_type": "points",
+                    "current_base": 97,
+                    "previous_base": 109,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.23,
+                      "spread_change": 1.21
+                    },
+                    "z_score": -5.89,
+                    "z_threshold": 2.0,
+                    "is_unusual": true
+                  },
+                  "avg_delivery_days": {
+                    "current": 7.67,
+                    "previous": 9.12,
+                    "change": -15.89,
+                    "change_type": "pct",
+                    "current_base": 97,
+                    "previous_base": 109,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.0,
+                      "spread_change": 15.27
+                    },
+                    "z_score": -1.04,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 0 events (late_orders)",
+                  "details": {
+                    "events": 0,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-3ea096e19f87": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-3ea096e19f87",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "BA",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "BA"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 0.0,
+                    "previous": 0.0,
+                    "change": 0.0,
+                    "change_type": "points",
+                    "current_base": 41,
+                    "previous_base": 62,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.1,
+                      "spread_change": 3.38
+                    },
+                    "z_score": 0.03,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  },
+                  "avg_delivery_days": {
+                    "current": 10.46,
+                    "previous": 11.69,
+                    "change": -10.52,
+                    "change_type": "pct",
+                    "current_base": 41,
+                    "previous_base": 62,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.74,
+                      "spread_change": 17.79
+                    },
+                    "z_score": -0.63,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 0 events (late_orders)",
+                  "details": {
+                    "events": 0,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-d241525968e0": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-d241525968e0",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "SC",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "SC"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 0.0,
+                    "previous": 4.17,
+                    "change": -4.17,
+                    "change_type": "points",
+                    "current_base": 67,
+                    "previous_base": 72,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.0,
+                      "spread_change": 2.8
+                    },
+                    "z_score": -1.49,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  },
+                  "avg_delivery_days": {
+                    "current": 8.55,
+                    "previous": 10.29,
+                    "change": -16.9,
+                    "change_type": "pct",
+                    "current_base": 67,
+                    "previous_base": 72,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 5.07,
+                      "spread_change": 14.23
+                    },
+                    "z_score": -1.54,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 0 events (late_orders)",
+                  "details": {
+                    "events": 0,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-10c64b06dc09": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-10c64b06dc09",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": "Other",
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {
+                  "state_group": "Other"
+                },
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 0.45,
+                    "previous": 3.69,
+                    "change": -3.24,
+                    "change_type": "points",
+                    "current_base": 222,
+                    "previous_base": 271,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.48,
+                      "spread_change": 3.56
+                    },
+                    "z_score": -1.04,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  },
+                  "avg_delivery_days": {
+                    "current": 10.52,
+                    "previous": 11.78,
+                    "change": -10.7,
+                    "change_type": "pct",
+                    "current_base": 222,
+                    "previous_base": 271,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 5.47,
+                      "spread_change": 19.4
+                    },
+                    "z_score": -0.83,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "SMALL_SAMPLE",
+                  "message": "late_delivery_pct: only 1 events (late_orders)",
+                  "details": {
+                    "events": 1,
+                    "minimum": 10
+                  }
+                }
+              ],
+              "error": null
+            },
+            "req-bc733dcd7da1": {
+              "tool_name": "get_delivery_signals",
+              "request_id": "req-bc733dcd7da1",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:47:44+00:00",
+              "parameters": {
+                "week": "2018-08-13",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metrics": {
+                  "late_delivery_pct": {
+                    "current": 3.48,
+                    "previous": 8.54,
+                    "change": -5.07,
+                    "change_type": "points",
+                    "current_base": 1754,
+                    "previous_base": 1931,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.24,
+                      "spread_change": 1.1
+                    },
+                    "z_score": -4.83,
+                    "z_threshold": 2.0,
+                    "is_unusual": true
+                  },
+                  "avg_delivery_days": {
+                    "current": 7.64,
+                    "previous": 8.42,
+                    "change": -9.28,
+                    "change_type": "pct",
+                    "current_base": 1754,
+                    "previous_base": 1931,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 2.15,
+                      "spread_change": 8.37
+                    },
+                    "z_score": -1.37,
+                    "z_threshold": 2.0,
+                    "is_unusual": false
+                  }
+                },
+                "note": "Association only: delivery changes alongside other changes do not establish cause."
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "delivery_signals_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:47:44+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-0f50abd2059a": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-0f50abd2059a",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "product_revenue",
+                "week": "2018-08-13",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "product_revenue",
+                "current": 233529.02,
+                "previous": 275772.04,
+                "change": -15.32,
+                "change_type": "pct",
+                "current_base": 1767,
+                "previous_base": 1961,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": -0.48,
+                  "spread_change": 14.94
+                },
+                "z_score": -0.99,
+                "z_threshold": 2.0,
+                "is_unusual": false
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_product_revenue_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-f4149cfda69c": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-f4149cfda69c",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "orders",
+                "week": "2018-08-13",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "orders",
+                "current": 1767,
+                "previous": 1961,
+                "change": -9.89,
+                "change_type": "pct",
+                "current_base": 1767,
+                "previous_base": 1961,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": 3.84,
+                  "spread_change": 11.34
+                },
+                "z_score": -1.21,
+                "z_threshold": 2.0,
+                "is_unusual": false
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_orders_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-0f3380f18e71": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-0f3380f18e71",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "avg_order_value",
+                "week": "2018-08-13",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "avg_order_value",
+                "current": 132.16,
+                "previous": 140.63,
+                "change": -6.02,
+                "change_type": "pct",
+                "current_base": 1767,
+                "previous_base": 1961,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": 0.57,
+                  "spread_change": 12.98
+                },
+                "z_score": -0.51,
+                "z_threshold": 2.0,
+                "is_unusual": false
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_avg_order_value_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-9ac1a937d64a": {
+              "tool_name": "get_weekly_metric",
+              "request_id": "req-9ac1a937d64a",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "avg_review_score",
+                "week": "2018-08-13",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "avg_review_score",
+                "current": 4.36,
+                "previous": 4.21,
+                "change": 0.15,
+                "change_type": "points",
+                "current_base": 1756,
+                "previous_base": 1959,
+                "baseline": {
+                  "weeks": 8,
+                  "method": "robust",
+                  "center_change": -0.01,
+                  "spread_change": 0.07
+                },
+                "z_score": 2.37,
+                "z_threshold": 2.0,
+                "is_unusual": true,
+                "current_review_coverage_pct": 99.38,
+                "previous_review_coverage_pct": 99.9
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "weekly_metric_avg_review_score_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 10,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-8b0629dfd485": {
+              "tool_name": "get_breakdown",
+              "request_id": "req-8b0629dfd485",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "product_revenue",
+                "week": "2018-08-13",
+                "dimension": "state",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "product_revenue",
+                "dimension": "state",
+                "groups": [
+                  {
+                    "group": "Other",
+                    "current": 30227.29,
+                    "previous": 49670.08,
+                    "change": -39.14,
+                    "change_type": "pct",
+                    "current_base": 224,
+                    "previous_base": 273,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 7.42,
+                      "spread_change": 11.15
+                    },
+                    "z_score": -4.18,
+                    "z_threshold": 3.0,
+                    "is_unusual": true,
+                    "warnings": [],
+                    "absolute_change": -19442.79,
+                    "share_of_total_change_pct": 46.03
+                  },
+                  {
+                    "group": "PR",
+                    "current": 10055.79,
+                    "previous": 15252.21,
+                    "change": -34.07,
+                    "change_type": "pct",
+                    "current_base": 97,
+                    "previous_base": 110,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -11.78,
+                      "spread_change": 6.17
+                    },
+                    "z_score": -3.62,
+                    "z_threshold": 3.0,
+                    "is_unusual": true,
+                    "warnings": [],
+                    "absolute_change": -5196.42,
+                    "share_of_total_change_pct": 12.3
+                  },
+                  {
+                    "group": "MG",
+                    "current": 26161.78,
+                    "previous": 32595.72,
+                    "change": -19.74,
+                    "change_type": "pct",
+                    "current_base": 184,
+                    "previous_base": 212,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 11.41,
+                      "spread_change": 18.43
+                    },
+                    "z_score": -1.69,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -6433.94,
+                    "share_of_total_change_pct": 15.23
+                  },
+                  {
+                    "group": "RS",
+                    "current": 10445.47,
+                    "previous": 20628.92,
+                    "change": -49.36,
+                    "change_type": "pct",
+                    "current_base": 96,
+                    "previous_base": 109,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.07,
+                      "spread_change": 37.38
+                    },
+                    "z_score": -1.32,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -10183.45,
+                    "share_of_total_change_pct": 24.11
+                  },
+                  {
+                    "group": "RJ",
+                    "current": 34108.24,
+                    "previous": 25900.36,
+                    "change": 31.69,
+                    "change_type": "pct",
+                    "current_base": 234,
+                    "previous_base": 225,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 4.74,
+                      "spread_change": 28.94
+                    },
+                    "z_score": 0.93,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": 8207.88,
+                    "share_of_total_change_pct": -19.43
+                  },
+                  {
+                    "group": "SP",
+                    "current": 103737.18,
+                    "previous": 113698.58,
+                    "change": -8.76,
+                    "change_type": "pct",
+                    "current_base": 823,
+                    "previous_base": 896,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 4.66,
+                      "spread_change": 15.38
+                    },
+                    "z_score": -0.87,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -9961.4,
+                    "share_of_total_change_pct": 23.58
+                  },
+                  {
+                    "group": "SC",
+                    "current": 11900.87,
+                    "previous": 9785.16,
+                    "change": 21.62,
+                    "change_type": "pct",
+                    "current_base": 67,
+                    "previous_base": 73,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -6.06,
+                      "spread_change": 35.94
+                    },
+                    "z_score": 0.77,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": 2115.71,
+                    "share_of_total_change_pct": -5.01
+                  },
+                  {
+                    "group": "BA",
+                    "current": 6892.4,
+                    "previous": 8241.01,
+                    "change": -16.36,
+                    "change_type": "pct",
+                    "current_base": 42,
+                    "previous_base": 63,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -11.66,
+                      "spread_change": 45.88
+                    },
+                    "z_score": -0.1,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -1348.61,
+                    "share_of_total_change_pct": 3.19
+                  }
+                ]
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "breakdown_state_product_revenue_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 80,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-a7f89bf624d9": {
+              "tool_name": "get_breakdown",
+              "request_id": "req-a7f89bf624d9",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "product_revenue",
+                "week": "2018-08-06",
+                "dimension": "state",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-07-30",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-04"
+              },
+              "data": {
+                "metric": "product_revenue",
+                "dimension": "state",
+                "groups": [
+                  {
+                    "group": "RS",
+                    "current": 20628.92,
+                    "previous": 9966.05,
+                    "change": 106.99,
+                    "change_type": "pct",
+                    "current_base": 109,
+                    "previous_base": 82,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 6.54,
+                      "spread_change": 18.99
+                    },
+                    "z_score": 5.29,
+                    "z_threshold": 3.0,
+                    "is_unusual": true,
+                    "warnings": [],
+                    "absolute_change": 10662.87,
+                    "share_of_total_change_pct": 771.41
+                  },
+                  {
+                    "group": "PR",
+                    "current": 15252.21,
+                    "previous": 13126.66,
+                    "change": 16.19,
+                    "change_type": "pct",
+                    "current_base": 110,
+                    "previous_base": 89,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -10.3,
+                      "spread_change": 15.14
+                    },
+                    "z_score": 1.75,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": 2125.55,
+                    "share_of_total_change_pct": 153.77
+                  },
+                  {
+                    "group": "SC",
+                    "current": 9785.16,
+                    "previous": 7222.25,
+                    "change": 35.49,
+                    "change_type": "pct",
+                    "current_base": 73,
+                    "previous_base": 48,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -4.73,
+                      "spread_change": 36.18
+                    },
+                    "z_score": 1.11,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": 2562.91,
+                    "share_of_total_change_pct": 185.41
+                  },
+                  {
+                    "group": "BA",
+                    "current": 8241.01,
+                    "previous": 7838.92,
+                    "change": 5.13,
+                    "change_type": "pct",
+                    "current_base": 63,
+                    "previous_base": 68,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -22.64,
+                      "spread_change": 29.59
+                    },
+                    "z_score": 0.94,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": 402.09,
+                    "share_of_total_change_pct": 29.09
+                  },
+                  {
+                    "group": "SP",
+                    "current": 113698.58,
+                    "previous": 123804.29,
+                    "change": -8.16,
+                    "change_type": "pct",
+                    "current_base": 896,
+                    "previous_base": 968,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 4.66,
+                      "spread_change": 15.86
+                    },
+                    "z_score": -0.81,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -10105.71,
+                    "share_of_total_change_pct": -731.1
+                  },
+                  {
+                    "group": "Other",
+                    "current": 49670.08,
+                    "previous": 52711.31,
+                    "change": -5.77,
+                    "change_type": "pct",
+                    "current_base": 273,
+                    "previous_base": 307,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 5.26,
+                      "spread_change": 18.95
+                    },
+                    "z_score": -0.58,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -3041.23,
+                    "share_of_total_change_pct": -220.02
+                  },
+                  {
+                    "group": "MG",
+                    "current": 32595.72,
+                    "previous": 30330.16,
+                    "change": 7.47,
+                    "change_type": "pct",
+                    "current_base": 212,
+                    "previous_base": 235,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 11.41,
+                      "spread_change": 23.5
+                    },
+                    "z_score": -0.17,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": 2265.56,
+                    "share_of_total_change_pct": 163.9
+                  },
+                  {
+                    "group": "RJ",
+                    "current": 25900.36,
+                    "previous": 29390.14,
+                    "change": -11.87,
+                    "change_type": "pct",
+                    "current_base": 225,
+                    "previous_base": 233,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -8.79,
+                      "spread_change": 25.35
+                    },
+                    "z_score": -0.12,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "warnings": [],
+                    "absolute_change": -3489.78,
+                    "share_of_total_change_pct": -252.47
+                  }
+                ]
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "breakdown_state_product_revenue_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 80,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            },
+            "req-7c4cf637efc2": {
+              "tool_name": "get_breakdown",
+              "request_id": "req-7c4cf637efc2",
+              "status": "ok",
+              "generated_at": "2026-10-10T00:49:04+00:00",
+              "parameters": {
+                "metric": "avg_review_score",
+                "week": "2018-08-13",
+                "dimension": "state",
+                "state": null,
+                "category": null,
+                "compare_week": "2018-08-06",
+                "grain": "week x state_group",
+                "filters": {},
+                "baseline_from": "2018-06-11"
+              },
+              "data": {
+                "metric": "avg_review_score",
+                "dimension": "state",
+                "groups": [
+                  {
+                    "group": "MG",
+                    "current": 4.47,
+                    "previous": 4.3,
+                    "change": 0.18,
+                    "change_type": "points",
+                    "current_base": 183,
+                    "previous_base": 212,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.01,
+                      "spread_change": 0.04
+                    },
+                    "z_score": 4.29,
+                    "z_threshold": 3.0,
+                    "is_unusual": true,
+                    "current_review_coverage_pct": 99.46,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  },
+                  {
+                    "group": "RS",
+                    "current": 4.62,
+                    "previous": 4.22,
+                    "change": 0.4,
+                    "change_type": "points",
+                    "current_base": 95,
+                    "previous_base": 109,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.06,
+                      "spread_change": 0.1
+                    },
+                    "z_score": 3.25,
+                    "z_threshold": 3.0,
+                    "is_unusual": true,
+                    "current_review_coverage_pct": 98.96,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  },
+                  {
+                    "group": "SP",
+                    "current": 4.32,
+                    "previous": 4.18,
+                    "change": 0.14,
+                    "change_type": "points",
+                    "current_base": 818,
+                    "previous_base": 894,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.01,
+                      "spread_change": 0.07
+                    },
+                    "z_score": 2.21,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "current_review_coverage_pct": 99.39,
+                    "previous_review_coverage_pct": 99.78,
+                    "warnings": []
+                  },
+                  {
+                    "group": "Other",
+                    "current": 4.43,
+                    "previous": 4.22,
+                    "change": 0.21,
+                    "change_type": "points",
+                    "current_base": 224,
+                    "previous_base": 273,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.05,
+                      "spread_change": 0.14
+                    },
+                    "z_score": 1.88,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "current_review_coverage_pct": 100.0,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  },
+                  {
+                    "group": "PR",
+                    "current": 4.49,
+                    "previous": 4.26,
+                    "change": 0.23,
+                    "change_type": "points",
+                    "current_base": 96,
+                    "previous_base": 110,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": -0.02,
+                      "spread_change": 0.18
+                    },
+                    "z_score": 1.35,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "current_review_coverage_pct": 98.97,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  },
+                  {
+                    "group": "BA",
+                    "current": 4.52,
+                    "previous": 4.35,
+                    "change": 0.17,
+                    "change_type": "points",
+                    "current_base": 42,
+                    "previous_base": 63,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.0,
+                      "spread_change": 0.31
+                    },
+                    "z_score": 0.56,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "current_review_coverage_pct": 100.0,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  },
+                  {
+                    "group": "RJ",
+                    "current": 4.21,
+                    "previous": 4.14,
+                    "change": 0.07,
+                    "change_type": "points",
+                    "current_base": 232,
+                    "previous_base": 225,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.03,
+                      "spread_change": 0.2
+                    },
+                    "z_score": 0.2,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "current_review_coverage_pct": 99.15,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  },
+                  {
+                    "group": "SC",
+                    "current": 4.3,
+                    "previous": 4.26,
+                    "change": 0.04,
+                    "change_type": "points",
+                    "current_base": 66,
+                    "previous_base": 73,
+                    "baseline": {
+                      "weeks": 8,
+                      "method": "robust",
+                      "center_change": 0.04,
+                      "spread_change": 0.29
+                    },
+                    "z_score": 0.01,
+                    "z_threshold": 3.0,
+                    "is_unusual": false,
+                    "current_review_coverage_pct": 98.51,
+                    "previous_review_coverage_pct": 100.0,
+                    "warnings": []
+                  }
+                ]
+              },
+              "evidence_refs": [
+                {
+                  "query_id": "breakdown_state_avg_review_score_v1",
+                  "backend": "duckdb",
+                  "table": "weekly_metrics",
+                  "row_count": 80,
+                  "executed_at": "2026-10-10T00:49:04+00:00"
+                }
+              ],
+              "warnings": [],
+              "error": null
+            }
+          },
+          "calls": null,
+          "transcript": [
+            {
+              "role": "user",
+              "text": "Write the weekly business review for the week starting 2018-08-13. Follow the four-turn plan, then return the report."
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "category": "health_beauty",
+                "metric": "product_revenue",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "metric": "orders",
+                "week": "2018-08-13",
+                "category": "health_beauty"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "category": "health_beauty",
+                "metric": "avg_order_value",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "metric": "avg_review_score",
+                "week": "2018-08-13",
+                "category": "health_beauty"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "metric": "product_revenue",
+                "dimension": "state",
+                "category": "health_beauty"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "metric": "avg_review_score",
+                "dimension": "state",
+                "category": "health_beauty"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "category": "health_beauty",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13",
+                "state": "SP"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13",
+                "state": "RJ"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "state": "MG",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "state": "RS",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13",
+                "state": "PR"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13",
+                "state": "BA"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13",
+                "state": "SC"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13",
+                "state": "Other"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_delivery_signals",
+              "input": {
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "DraftReport",
+              "input": {
+                "claims": [],
+                "unavailable": [
+                  "product_revenue",
+                  "orders",
+                  "items",
+                  "items_per_order",
+                  "avg_order_value",
+                  "avg_item_price",
+                  "one_star_pct",
+                  "late_delivery_pct",
+                  "avg_delivery_days",
+                  "cancellation_rate"
+                ]
+              }
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-7432859b77c0\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"category_group\": \"health_beauty\"}, \"metric\": \"product_revenue\", \"current\": 20404.77, \"previous\": 40482.91, \"change\": -49.6, \"change_type\": \"pct\", \"z_score\": -2.67, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 132}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-a2e7205e6c67\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"category_group\": \"health_beauty\"}, \"metric\": \"orders\", \"current\": 132, \"previous\": 240, \"change\": -45.0, \"change_type\": \"pct\", \"z_score\": -1.18, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 132}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-48c4c04318de\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"category_group\": \"health_beauty\"}, \"metric\": \"avg_order_value\", \"current\": 154.58, \"previous\": 168.68, \"change\": -8.36, \"change_type\": \"pct\", \"z_score\": -0.45, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 132}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-1811556cf6ea\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"category_group\": \"health_beauty\"}, \"metric\": \"avg_review_score\", \"current\": 4.55, \"previous\": 4.28, \"change\": 0.27, \"change_type\": \"points\", \"z_score\": 1.66, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 132, \"current_review_coverage_pct\": 100.0}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "error",
+              "content": [
+                {
+                  "text": "Error: Validation failed for input parameters: 1 validation error for Get_breakdownTool\nweek\n  Field required [type=missing, input_value={'metric': 'product_reven...egory': 'health_beauty'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "error",
+              "content": [
+                {
+                  "text": "Error: Validation failed for input parameters: 1 validation error for Get_breakdownTool\nweek\n  Field required [type=missing, input_value={'metric': 'avg_review_sc...egory': 'health_beauty'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-4e66f880397e\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"category_group\": \"health_beauty\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 1.52, \"previous\": 11.11, \"change\": -9.6, \"change_type\": \"points\", \"z_score\": -1.76, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 132}, \"avg_delivery_days\": {\"current\": 8.92, \"previous\": 8.85, \"change\": 0.8, \"change_type\": \"pct\", \"z_score\": 0.02, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 132}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-29628e6fe6c9\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"SP\"}, \"metrics\": {\"late_delivery_pct\": {\"current\": 6.01, \"previous\": 13.51, \"change\": -7.5, \"change_type\": \"points\", \"z_score\": -11.0, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 815}, \"avg_delivery_days\": {\"current\": 6.26, \"previous\": 6.69, \"change\": -6.47, \"change_type\": \"pct\", \"z_score\": -0.44, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 815}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-f00b150194df\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"RJ\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 3.88, \"previous\": 6.45, \"change\": -2.57, \"change_type\": \"points\", \"z_score\": -4.56, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 232}, \"avg_delivery_days\": {\"current\": 8.07, \"previous\": 8.77, \"change\": -7.99, \"change_type\": \"pct\", \"z_score\": -1.39, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 232}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-2244381ef8c6\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"MG\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 0.0, \"previous\": 2.86, \"change\": -2.86, \"change_type\": \"points\", \"z_score\": -3.01, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 184}, \"avg_delivery_days\": {\"current\": 7.25, \"previous\": 7.9, \"change\": -8.28, \"change_type\": \"pct\", \"z_score\": -1.11, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 184}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-dc196700f7f3\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"RS\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 2.08, \"previous\": 4.59, \"change\": -2.5, \"change_type\": \"points\", \"z_score\": -0.54, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 96}, \"avg_delivery_days\": {\"current\": 10.56, \"previous\": 10.58, \"change\": -0.15, \"change_type\": \"pct\", \"z_score\": -0.27, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 96}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-24fdb3a60ac1\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"PR\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 0.0, \"previous\": 7.34, \"change\": -7.34, \"change_type\": \"points\", \"z_score\": -5.89, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 97}, \"avg_delivery_days\": {\"current\": 7.67, \"previous\": 9.12, \"change\": -15.89, \"change_type\": \"pct\", \"z_score\": -1.04, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 97}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-3ea096e19f87\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"BA\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 0.0, \"previous\": 0.0, \"change\": 0.0, \"change_type\": \"points\", \"z_score\": 0.03, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 41}, \"avg_delivery_days\": {\"current\": 10.46, \"previous\": 11.69, \"change\": -10.52, \"change_type\": \"pct\", \"z_score\": -0.63, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 41}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-d241525968e0\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"SC\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 0.0, \"previous\": 4.17, \"change\": -4.17, \"change_type\": \"points\", \"z_score\": -1.49, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 67}, \"avg_delivery_days\": {\"current\": 8.55, \"previous\": 10.29, \"change\": -16.9, \"change_type\": \"pct\", \"z_score\": -1.54, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 67}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-10c64b06dc09\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {\"state_group\": \"Other\"}, \"warnings\": [\"SMALL_SAMPLE\"], \"metrics\": {\"late_delivery_pct\": {\"current\": 0.45, \"previous\": 3.69, \"change\": -3.24, \"change_type\": \"points\", \"z_score\": -1.04, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 222}, \"avg_delivery_days\": {\"current\": 10.52, \"previous\": 11.78, \"change\": -10.7, \"change_type\": \"pct\", \"z_score\": -0.83, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 222}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-bc733dcd7da1\", \"tool\": \"get_delivery_signals\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metrics\": {\"late_delivery_pct\": {\"current\": 3.48, \"previous\": 8.54, \"change\": -5.07, \"change_type\": \"points\", \"z_score\": -4.83, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 1754}, \"avg_delivery_days\": {\"current\": 7.64, \"previous\": 8.42, \"change\": -9.28, \"change_type\": \"pct\", \"z_score\": -1.37, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 1754}}}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "error",
+              "content": [
+                {
+                  "text": "Validation failed for DraftReport. Please fix the following errors:\n- Field 'actionable_questions': Field required"
+                }
+              ]
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "metric": "product_revenue",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "metric": "orders",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "metric": "avg_order_value",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "week": "2018-08-13",
+                "metric": "avg_review_score"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "metric": "product_revenue",
+                "dimension": "state",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "week": "2018-08-06",
+                "metric": "product_revenue",
+                "dimension": "state"
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "metric": "avg_review_score",
+                "dimension": "state",
+                "week": "2018-08-13"
+              }
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-0f50abd2059a\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metric\": \"product_revenue\", \"current\": 233529.02, \"previous\": 275772.04, \"change\": -15.32, \"change_type\": \"pct\", \"z_score\": -0.99, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 1767}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-f4149cfda69c\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metric\": \"orders\", \"current\": 1767, \"previous\": 1961, \"change\": -9.89, \"change_type\": \"pct\", \"z_score\": -1.21, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 1767}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-0f3380f18e71\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metric\": \"avg_order_value\", \"current\": 132.16, \"previous\": 140.63, \"change\": -6.02, \"change_type\": \"pct\", \"z_score\": -0.51, \"z_threshold\": 2.0, \"is_unusual\": false, \"current_base\": 1767}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-9ac1a937d64a\", \"tool\": \"get_weekly_metric\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metric\": \"avg_review_score\", \"current\": 4.36, \"previous\": 4.21, \"change\": 0.15, \"change_type\": \"points\", \"z_score\": 2.37, \"z_threshold\": 2.0, \"is_unusual\": true, \"current_base\": 1756, \"current_review_coverage_pct\": 99.38}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-8b0629dfd485\", \"tool\": \"get_breakdown\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metric\": \"product_revenue\", \"dimension\": \"state\", \"groups\": [{\"group\": \"Other\", \"current\": 30227.29, \"previous\": 49670.08, \"change\": -39.14, \"change_type\": \"pct\", \"z_score\": -4.18, \"z_threshold\": 3.0, \"is_unusual\": true, \"current_base\": 224, \"absolute_change\": -19442.79, \"share_of_total_change_pct\": 46.03}, {\"group\": \"PR\", \"current\": 10055.79, \"previous\": 15252.21, \"change\": -34.07, \"change_type\": \"pct\", \"z_score\": -3.62, \"z_threshold\": 3.0, \"is_unusual\": true, \"current_base\": 97, \"absolute_change\": -5196.42, \"share_of_total_change_pct\": 12.3}, {\"group\": \"MG\", \"current\": 26161.78, \"previous\": 32595.72, \"change\": -19.74, \"change_type\": \"pct\", \"z_score\": -1.69, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 184, \"absolute_change\": -6433.94, \"share_of_total_change_pct\": 15.23}, {\"group\": \"RS\", \"current\": 10445.47, \"previous\": 20628.92, \"change\": -49.36, \"change_type\": \"pct\", \"z_score\": -1.32, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 96, \"absolute_change\": -10183.45, \"share_of_total_change_pct\": 24.11}, {\"group\": \"RJ\", \"current\": 34108.24, \"previous\": 25900.36, \"change\": 31.69, \"change_type\": \"pct\", \"z_score\": 0.93, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 234, \"absolute_change\": 8207.88, \"share_of_total_change_pct\": -19.43}, {\"group\": \"SP\", \"current\": 103737.18, \"previous\": 113698.58, \"change\": -8.76, \"change_type\": \"pct\", \"z_score\": -0.87, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 823, \"absolute_change\": -9961.4, \"share_of_total_change_pct\": 23.58}], \"groups_not_shown\": 2}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-a7f89bf624d9\", \"tool\": \"get_breakdown\", \"status\": \"ok\", \"week\": \"2018-08-06\", \"compare_week\": \"2018-07-30\", \"filters\": {}, \"metric\": \"product_revenue\", \"dimension\": \"state\", \"groups\": [{\"group\": \"RS\", \"current\": 20628.92, \"previous\": 9966.05, \"change\": 106.99, \"change_type\": \"pct\", \"z_score\": 5.29, \"z_threshold\": 3.0, \"is_unusual\": true, \"current_base\": 109, \"absolute_change\": 10662.87, \"share_of_total_change_pct\": 771.41}, {\"group\": \"PR\", \"current\": 15252.21, \"previous\": 13126.66, \"change\": 16.19, \"change_type\": \"pct\", \"z_score\": 1.75, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 110, \"absolute_change\": 2125.55, \"share_of_total_change_pct\": 153.77}, {\"group\": \"SC\", \"current\": 9785.16, \"previous\": 7222.25, \"change\": 35.49, \"change_type\": \"pct\", \"z_score\": 1.11, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 73, \"absolute_change\": 2562.91, \"share_of_total_change_pct\": 185.41}, {\"group\": \"BA\", \"current\": 8241.01, \"previous\": 7838.92, \"change\": 5.13, \"change_type\": \"pct\", \"z_score\": 0.94, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 63, \"absolute_change\": 402.09, \"share_of_total_change_pct\": 29.09}, {\"group\": \"SP\", \"current\": 113698.58, \"previous\": 123804.29, \"change\": -8.16, \"change_type\": \"pct\", \"z_score\": -0.81, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 896, \"absolute_change\": -10105.71, \"share_of_total_change_pct\": -731.1}, {\"group\": \"Other\", \"current\": 49670.08, \"previous\": 52711.31, \"change\": -5.77, \"change_type\": \"pct\", \"z_score\": -0.58, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 273, \"absolute_change\": -3041.23, \"share_of_total_change_pct\": -220.02}], \"groups_not_shown\": 2}"
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "success",
+              "content": [
+                {
+                  "text": "{\"request_id\": \"req-7c4cf637efc2\", \"tool\": \"get_breakdown\", \"status\": \"ok\", \"week\": \"2018-08-13\", \"compare_week\": \"2018-08-06\", \"filters\": {}, \"metric\": \"avg_review_score\", \"dimension\": \"state\", \"groups\": [{\"group\": \"MG\", \"current\": 4.47, \"previous\": 4.3, \"change\": 0.18, \"change_type\": \"points\", \"z_score\": 4.29, \"z_threshold\": 3.0, \"is_unusual\": true, \"current_base\": 183, \"current_review_coverage_pct\": 99.46}, {\"group\": \"RS\", \"current\": 4.62, \"previous\": 4.22, \"change\": 0.4, \"change_type\": \"points\", \"z_score\": 3.25, \"z_threshold\": 3.0, \"is_unusual\": true, \"current_base\": 95, \"current_review_coverage_pct\": 98.96}, {\"group\": \"SP\", \"current\": 4.32, \"previous\": 4.18, \"change\": 0.14, \"change_type\": \"points\", \"z_score\": 2.21, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 818, \"current_review_coverage_pct\": 99.39}, {\"group\": \"Other\", \"current\": 4.43, \"previous\": 4.22, \"change\": 0.21, \"change_type\": \"points\", \"z_score\": 1.88, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 224, \"current_review_coverage_pct\": 100.0}, {\"group\": \"PR\", \"current\": 4.49, \"previous\": 4.26, \"change\": 0.23, \"change_type\": \"points\", \"z_score\": 1.35, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 96, \"current_review_coverage_pct\": 98.97}, {\"group\": \"BA\", \"current\": 4.52, \"previous\": 4.35, \"change\": 0.17, \"change_type\": \"points\", \"z_score\": 0.56, \"z_threshold\": 3.0, \"is_unusual\": false, \"current_base\": 42, \"current_review_coverage_pct\": 100.0}], \"groups_not_shown\": 2}"
+                }
+              ]
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_weekly_metric",
+              "input": {
+                "metric": "product_revenue",
+                "week": "2018-08-13",
+                "compare_week": "2018-08-06",
+                "filters": {
+                  "category": "health_beauty"
+                }
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "metric": "product_revenue",
+                "dimension": "state",
+                "week": "2018-08-13",
+                "compare_week": "2018-08-06",
+                "filters": {
+                  "category": "health_beauty"
+                }
+              }
+            },
+            {
+              "role": "assistant",
+              "tool_call": "get_breakdown",
+              "input": {
+                "metric": "avg_review_score",
+                "dimension": "state",
+                "week": "2018-08-13",
+                "compare_week": "2018-08-06",
+                "filters": {
+                  "category": "health_beauty"
+                }
+              }
+            },
+            {
+              "role": "tool",
+              "status": "error",
+              "content": [
+                {
+                  "text": "The run is stopping; do not call more tools."
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "error",
+              "content": [
+                {
+                  "text": "The run is stopping; do not call more tools."
+                }
+              ]
+            },
+            {
+              "role": "tool",
+              "status": "error",
+              "content": [
+                {
+                  "text": "The run is stopping; do not call more tools."
+                }
+              ]
+            },
+            {
+              "role": "assistant",
+              "text": "Run stopped: model usage exceeded its reservation"
+            },
+            {
+              "role": "user",
+              "text": "You must format the previous response as structured output."
+            },
+            {
+              "role": "assistant",
+              "text": "Run stopped: model usage exceeded its reservation"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

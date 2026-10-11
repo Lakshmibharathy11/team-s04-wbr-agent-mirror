@@ -1,0 +1,18 @@
+# Data and query tools
+duckdb
+pandas
+
+# Athena backend (AWS)
+boto3
+
+# Analyst agent
+strands-agents>=1.58
+pydantic
+
+# Tests
+pytest
+
+# Notebooks and charts (exploration only)
+jupyter
+ipykernel
+matplotlib

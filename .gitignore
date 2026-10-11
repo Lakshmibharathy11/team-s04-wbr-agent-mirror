@@ -1,0 +1,46 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Data — raw Olist data and generated query outputs must not be committed
+data/raw/
+data/source/
+*.csv
+*.parquet
+*.avro
+*.orc
+athena-results/
+data/export/
+# Local artifacts
+coverage/
+dist/
+build/
+# Local DuckDB database files (contain Olist data; must not be committed)
+*.duckdb
+*.duckdb.wal
+
+# Generated offline report previews
+/demo/review/
+

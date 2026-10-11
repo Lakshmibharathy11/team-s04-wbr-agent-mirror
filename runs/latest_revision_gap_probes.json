@@ -1,0 +1,10 @@
+{
+  "baseline_analyst_commit": "eb8a05b7e3c09279c0db4c845256b01dc4665e65",
+  "baseline_runner": "0b2a757",
+  "synthetic_probe_only": true,
+  "wrong_period_postcheck_status": "COMPLETE",
+  "wrong_period_confidence": "medium",
+  "missing_comparison_accepted": true,
+  "direct_adapter_with_test_keep_verifier": "complete",
+  "new_candidate_results": "161 passed, 5 deselected, 35 subtests passed"
+}

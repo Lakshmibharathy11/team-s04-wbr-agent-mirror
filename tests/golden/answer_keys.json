@@ -1,0 +1,187 @@
+{
+  "dataset": "SYNTHETIC test scenarios planted on real Olist weekly data",
+  "method": "Detection uses single-metric z-scores (threshold 2); attribution uses breakdown rank and share of change. The breakdown threshold (3) flags standalone anomalies when scanning.",
+  "built_from": "data/olist.duckdb (unchanged)",
+  "golden_db": "data/golden.duckdb",
+  "scenarios": [
+    {
+      "id": "S1_category_drop",
+      "week": "2018-08-13",
+      "question_id": "Q3",
+      "planted": "health_beauty sales in SP fall 85% (orders, revenue, items, reviews, deliveries scaled).",
+      "expected": {
+        "top_category_by_revenue_change": "health_beauty",
+        "category_drop_unusual_single_metric": true,
+        "top_state_within_category": "SP",
+        "largest_share_of_category_drop": "SP",
+        "claim_type": "fact",
+        "report_status": "COMPLETE"
+      },
+      "agent_should_say": "health_beauty revenue fell sharply, concentrated in SP."
+    },
+    {
+      "id": "S2_delivery_and_reviews",
+      "week": "2018-05-28",
+      "question_id": "Q2",
+      "planted": "In RJ, late deliveries rise to 30% and the average review score falls 0.8 points; revenue unchanged.",
+      "expected": {
+        "state_with_review_drop": "RJ",
+        "review_drop_is_unusual": true,
+        "late_delivery_rise_is_unusual": true,
+        "claim_type": "observed_pattern",
+        "causal_language_allowed": false,
+        "report_status": "COMPLETE"
+      },
+      "agent_should_say": "Average review score fell in RJ while late deliveries rose there; this is an observed pattern, not an established cause."
+    },
+    {
+      "id": "S3_unexplained_drop",
+      "week": "2018-02-12",
+      "question_id": "Q1",
+      "planted": "MG volume falls 50% evenly across all categories, with no change in delivery rates.",
+      "expected": {
+        "top_state_by_revenue_change": "MG",
+        "largest_share_of_total_change": "MG",
+        "state_drop_unusual_single_metric": true,
+        "single_category_driver": false,
+        "delivery_worsening_unusual": false,
+        "claim_type": "unexplained",
+        "requires_human_review": true,
+        "report_status": "COMPLETE"
+      },
+      "agent_should_say": "MG revenue fell sharply across all categories with no delivery change; unexplained, needs analyst review."
+    },
+    {
+      "id": "S4_incomplete_week",
+      "week": "2018-08-20",
+      "question_id": "all",
+      "planted": "Real data: the week of 2018-08-20 is incomplete (end of data collection). Nothing planted.",
+      "expected": {
+        "tool_status": "partial",
+        "warning": "INCOMPLETE_WEEK",
+        "report_status": "PARTIAL"
+      },
+      "agent_should_say": "Numbers for this week are not final; no conclusions drawn."
+    },
+    {
+      "id": "S5_tool_failure",
+      "week": "2018-07-02",
+      "question_id": "Q2",
+      "planted": "The review-score query fails (WBR_SIMULATE_FAILURE=avg_review_score); other metrics succeed.",
+      "run_with": {
+        "WBR_SIMULATE_FAILURE": "avg_review_score"
+      },
+      "expected": {
+        "review_score_status": "error",
+        "revenue_status": "ok",
+        "orders_status": "ok",
+        "report_status": "PARTIAL",
+        "values_invented": false
+      },
+      "agent_should_say": "Review score unavailable this week; revenue and orders reported."
+    },
+    {
+      "id": "S6_garbage_data",
+      "week": "2018-01-15",
+      "question_id": "Q2",
+      "planted": "Corrupted row: PR reports more late orders than delivered orders (impossible).",
+      "expected": {
+        "delivery_signals_PR_status": "error",
+        "error_type": "malformed_data",
+        "breakdown_status": "partial",
+        "breakdown_PR_values": null,
+        "warning": "INVALID_DATA",
+        "report_status": "PARTIAL",
+        "values_invented": false
+      },
+      "agent_should_say": "PR delivery data failed validation this week and is excluded."
+    },
+    {
+      "id": "S7_missing_rows",
+      "week": "2018-04-23",
+      "question_id": "Q1",
+      "planted": "BA's row is missing from weekly_metrics for this week (data did not arrive).",
+      "expected": {
+        "BA_revenue_status": "partial",
+        "BA_revenue_current": null,
+        "total_revenue_status": "partial",
+        "warning": "NO_DATA",
+        "missing_treated_as_zero": false,
+        "report_status": "PARTIAL"
+      },
+      "agent_should_say": "BA data is missing this week; totals are not reported as a drop."
+    },
+    {
+      "id": "S8_zero_denominator",
+      "week": "2018-02-19",
+      "question_id": "Q2",
+      "planted": "SC reports zero delivered orders this week, so late delivery % cannot be calculated.",
+      "expected": {
+        "SC_late_delivery_pct_current": null,
+        "warning": "ZERO_DENOMINATOR",
+        "fabricated_percentage": false
+      },
+      "agent_should_say": "SC late delivery rate cannot be calculated this week (no deliveries)."
+    },
+    {
+      "id": "S9_invalid_agent_input",
+      "week": "n/a",
+      "question_id": "all",
+      "planted": "Nothing planted: the agent requests an unknown metric, a non-Monday, or a week outside the window.",
+      "expected": {
+        "tool_status": "error",
+        "error_type": "validation",
+        "agent_behavior": "corrects the input and retries, or reports the limitation"
+      },
+      "agent_should_say": "Nothing about the invalid request; it retries with valid inputs."
+    },
+    {
+      "id": "S10_insufficient_history",
+      "week": "2017-02-13",
+      "question_id": "Q1",
+      "planted": "Nothing planted: an early week has fewer than 8 earlier weeks for a baseline.",
+      "expected": {
+        "z_score": null,
+        "warning": "INSUFFICIENT_HISTORY",
+        "agent_behavior": "reports the change without calling it unusual"
+      },
+      "agent_should_say": "Change reported; too little history to judge whether it is unusual."
+    }
+  ],
+  "verifier_test_cases": [
+    {
+      "id": "V1_unsupported_cause",
+      "scenario": "S2_delivery_and_reviews",
+      "claim": "Average review score fell in RJ because late deliveries rose.",
+      "claim_type": "observed_pattern",
+      "causal_language_allowed": false,
+      "expected_verifier_outcome": "downgrade or flag",
+      "reason": "Causal wording without causal evidence; the data shows association only."
+    },
+    {
+      "id": "V2_number_not_in_evidence",
+      "scenario": "S1_category_drop",
+      "claim": "health_beauty revenue fell 95% in SP.",
+      "claim_type": "fact",
+      "expected_verifier_outcome": "remove",
+      "reason": "The cited tool result reports about an 85% drop; 95% appears in no evidence."
+    },
+    {
+      "id": "V3_claim_on_unavailable_evidence",
+      "scenario": "S5_tool_failure",
+      "claim": "Average review score was stable this week.",
+      "claim_type": "fact",
+      "expected_verifier_outcome": "remove",
+      "reason": "The review-score tool call failed; no evidence supports any review claim."
+    },
+    {
+      "id": "V4_unrelated_metrics_linked",
+      "scenario": "any",
+      "claim": "Revenue fell because reviews fell.",
+      "claim_type": "observed_pattern",
+      "causal_language_allowed": false,
+      "expected_verifier_outcome": "downgrade or flag",
+      "reason": "From the demo script: both declined, but the report does not establish cause."
+    }
+  ]
+}
