@@ -19,15 +19,14 @@ Lakshmi's branch was checked twice: HEAD is eb8a05b7e3c09279c0db4c845256b01dc466
 
 Environment: Python 3.12, Strands 1.58.1, boto3/botocore 1.43.109, DuckDB 1.5.6, pytest 9.1.1. New period tests block sockets and use synthetic tools or saved captures. Broader tests are model-free. No new live performance or cost result is claimed.
 
-Apply from a clean repository with both source revisions available:
+Reproduce the limited review suite from the private branch (with dependencies installed):
 
 ```bash
-git switch -c fix/s04-reconciled-safeguards eb8a05b7e3c09279c0db4c845256b01dc4665e65
-git checkout 0b2a757 -- src
-git checkout 0b2a757 -- tests/test_wbr_contract.py tests/test_lakshmi_handoff.py
-git apply period-binding.patch
-python -m pytest tests/test_period_binding.py tests/test_wording_boundary.py -q
+git switch fix/s04-reconciled-safeguards-20261011
+python scripts/verify_offline_review.py
 ```
+
+The launcher forces local settings before imports, supplies inert AWS credentials, disables pytest plugin autoload, and blocks Python socket connection, DNS and datagram calls for the entire selected suite. It accepts no arguments, so additional tests cannot accidentally enable a live evaluation. This is an in-process guard for this model-free suite, not an operating-system network sandbox for arbitrary subprocesses. The exact excluded test names are recorded in the script. A successful command does not certify the full database suite, scenario acceptance, cost or live model behavior.
 
 The patch was applied to an independently reconstructed exact baseline and compared byte-for-byte with the tested candidate. The private review branch brings together the pinned runner source and its regression fixtures with Lakshmi’s latest analyst revision. A legacy adapter success fixture now explicitly records both weeks; incomplete period metadata never counts as verified completion.
 
