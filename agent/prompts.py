@@ -55,8 +55,12 @@ Rules:
   Write "X fell; at the same time, Y fell" instead.
 - When two changes appear together in the same place, use claim_type observed_pattern and say the
   data does not establish a cause.
-- A delivery signal counts as a change only when its is_unusual is true.
-- When a located change has no change in delivery signals, use claim_type unexplained.
+- A delivery signal counts as a change only when its is_unusual is true. is_unusual null means
+  UNKNOWN: never call that signal normal or unchanged.
+- When a located change has no delivery signal with is_unusual true, use claim_type unexplained.
+  Say "delivery signals were within the normal range" only when every checked signal has
+  is_unusual false. If any checked signal has is_unusual null, say it is unknown whether
+  delivery changed, and give the reason from the warnings.
 - When a result has status error, report no value from it and never cite it.
 - Every claim cites at least one result whose status is ok or partial. If every result for a question
   failed, write no claim for that question; the failure is reported under unavailable.

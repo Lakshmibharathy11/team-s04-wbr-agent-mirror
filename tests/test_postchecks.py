@@ -147,3 +147,35 @@ def test_validation_error_view_tells_the_model_to_retry():
     from tools.wbr_tools import get_weekly_metric
     view = concise_view(get_weekly_metric("not_a_metric", KEYS["S1"]["week"]))
     assert view["status"] == "error" and "call again" in view["guidance"]
+
+
+# ---------------------------------------------------------------- reviewer's reproduction
+def test_confidence_does_not_depend_on_group_order():
+    # A fact claim about group B must not get A's statistics, whatever the list order
+    a = {"group": "SP", "z_score": 6.0, "warnings": []}
+    b = {"group": "RJ", "z_score": 0.4, "warnings": []}
+    for groups in ([a, b], [b, a]):
+        env = breakdown(groups)
+        ctx = SimpleNamespace(evidence_log={"r1": env}, calls=[])
+        claim = SimpleNamespace(question_id="Q1", statement="Revenue in RJ fell.", claim_type="fact",
+                                supporting_evidence=["r1"])
+        out = finalize(SimpleNamespace(claims=[claim], unavailable=[], actionable_questions=[]), ctx)
+        c = out["claims"][0]
+        assert c["confidence"] == "medium" and c["requires_human_review"] is False, groups
+
+
+def test_claim_on_weak_group_needs_review_whatever_the_order():
+    a = {"group": "SP", "z_score": 6.0, "warnings": []}
+    b = {"group": "RJ", "z_score": 4.0, "warnings": ["SMALL_SAMPLE"]}
+    for groups in ([a, b], [b, a]):
+        ctx = SimpleNamespace(evidence_log={"r1": breakdown(groups)}, calls=[])
+        claim = SimpleNamespace(question_id="Q1", statement="Revenue in RJ fell.", claim_type="fact",
+                                supporting_evidence=["r1"])
+        c = finalize(SimpleNamespace(claims=[claim], unavailable=[], actionable_questions=[]), ctx)["claims"][0]
+        assert c["confidence"] == "low" and c["requires_human_review"] is True, groups
+
+
+def test_prompt_treats_null_delivery_signal_as_unknown():
+    from agent.prompts import SYSTEM_PROMPT
+    assert "is_unusual null means\n  UNKNOWN" in SYSTEM_PROMPT
+    assert "only when every checked signal has\n  is_unusual false" in SYSTEM_PROMPT
