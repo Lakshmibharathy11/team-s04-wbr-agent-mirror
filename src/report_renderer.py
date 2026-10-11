@@ -71,8 +71,14 @@ def render_report(payload, *, week, scenario, source_commit, mode):
             confirmed.append(card)
         else:
             review.append(card[:-10] + f'<p class="warning">{text(raw.get("verifier_reason", "Human review required"))}</p></article>')
-    status = 'REJECTED' if rejected or period_bad else ('COMPLETE' if payload['status'] == 'complete' and confirmed and not review and not withheld else 'PARTIAL')
+    # No independently reviewed mandatory-coverage validator is available.
+    # Never turn a caller's complete flag into whole-report certification.
+    status = 'REJECTED' if rejected or period_bad else 'PARTIAL'
     warnings = ''.join(f'<li>{text(w)}</li>' for w in payload.get('warnings', []))
+    badge_warnings = ''.join(f'<li>{text(w)}</li>' for e in envelopes for w in e['warnings'])
+    if any(e['status'] != 'ok' for e in envelopes):
+        badge_warnings += '<li>Some tool evidence is partial or unavailable.</li>'
+    badge_warnings = '<ul>' + badge_warnings + '</ul>' if badge_warnings else ''
     message = ('Claims withheld: evidence periods or report contract were rejected.' if status == 'REJECTED' else
                'Some findings or evidence require review. This report is not certified complete.' if status == 'PARTIAL' else
                'The selected claims passed the configured verifier. Completion does not establish causation or certify live model reliability.')
@@ -82,7 +88,7 @@ def render_report(payload, *, week, scenario, source_commit, mode):
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>S04 weekly business review · {text(status)}</title><style>
 :root{{color-scheme:light}}*{{box-sizing:border-box}}body{{margin:0;background:#f3f5f8;color:#17263a;font:17px/1.55 system-ui,sans-serif}}main{{max-width:900px;margin:auto;padding:24px 18px}}header{{background:#12243d;color:white;padding:26px;border-radius:18px}}h1{{font-size:clamp(25px,5vw,38px);line-height:1.2}}h2{{margin-top:32px}}h3{{font-size:18px}}.badge{{display:inline-block;background:#fff;color:#12243d;border-radius:8px;padding:6px 12px;font-weight:800}}.claim,.evidence,.notice{{background:white;border:1px solid #ccd5df;padding:18px;border-radius:12px;margin:12px 0}}.notice{{border-left:6px solid #9b5700}}.warning{{color:#8b3b00;font-weight:650}}.meta{{font-size:14px}}.mono,pre{{font-family:ui-monospace,monospace;overflow-wrap:anywhere}}pre{{white-space:pre-wrap;font-size:13px}}a{{color:#0756a3;overflow-wrap:anywhere}}summary{{cursor:pointer;padding:10px 0}}footer{{font-size:14px;margin:30px 0}}@media print{{body{{background:white}}main{{max-width:none}}header{{color:black;background:white;border:1px solid #aaa}}details{{display:block}}}}
-</style></head><body><main><header><p>TEAM S04 · OLIST · WEEKLY BUSINESS REVIEW</p><h1>Evidence before explanation</h1><span class="badge">{status}</span><p>{text(scenario)} · requested week {text(week)}</p></header>
+</style></head><body><main><header><p>TEAM S04 · OLIST · WEEKLY BUSINESS REVIEW</p><h1>Evidence before explanation</h1><span class="badge">{status}</span>{badge_warnings}<p>{text(scenario)} · requested week {text(week)}</p></header>
 <div class="notice"><strong>{text(mode)}</strong><p>{text(message)}</p><p>Source revision: <span class="mono">{text(source_commit)}</span></p><p>Offline presentation: no model or AWS calls.</p></div>
 <h2>Confirmed findings</h2>{confirmed_html}<h2>Findings requiring human review</h2><p>These statements remain unconfirmed. They are shown for review, not as established conclusions.</p>{review_html}
 <h2>Unavailable or withheld</h2><p>{withheld} claim(s) withheld. Removed statement text and raw analyst drafts are not displayed.</p><ul>{warnings}</ul>

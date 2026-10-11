@@ -97,7 +97,7 @@ class RendererBoundaryTests(unittest.TestCase):
             expected_tool_names=EXPECTED_TOOLS,
         )
 
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         by_name = {item["tool_name"]: item["data"] for item in captured["tool_results"]}
         self.assertEqual(by_name, expected_data)
 

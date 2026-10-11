@@ -107,7 +107,8 @@ def _z_score(current_change, baseline_changes: list):
     return center, spread, (current_change - center) / spread
 
 
-def _round(value, digits=2):
+def _round(value, digits=None):
+    digits = config.NUMERIC_PRECISION_DIGITS if digits is None else digits
     if value is None:
         return None
     rounded = round(value, digits)
@@ -257,6 +258,7 @@ def get_weekly_metric(metric: str, week: str, state: str | None = None,
     parameters.update({
         "week": week_date, "compare_week": week_date - ONE_WEEK,
         "grain": config.TABLES[table]["grain"], "filters": filters,
+        "numeric_precision_digits": config.NUMERIC_PRECISION_DIGITS,
         "baseline_from": max(start, config.WINDOW_START),
     })
 
@@ -337,6 +339,7 @@ def get_breakdown(metric: str, week: str, dimension: str, state: str | None = No
     parameters.update({
         "week": week_date, "compare_week": week_date - ONE_WEEK,
         "grain": config.TABLES[table]["grain"], "filters": filters,
+        "numeric_precision_digits": config.NUMERIC_PRECISION_DIGITS,
         "baseline_from": max(start, config.WINDOW_START),
     })
 
@@ -422,6 +425,7 @@ def get_delivery_signals(week: str, state: str | None = None, category: str | No
     parameters.update({
         "week": week_date, "compare_week": week_date - ONE_WEEK,
         "grain": config.TABLES[table]["grain"], "filters": filters,
+        "numeric_precision_digits": config.NUMERIC_PRECISION_DIGITS,
         "baseline_from": max(start, config.WINDOW_START),
     })
 

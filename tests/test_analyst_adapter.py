@@ -25,7 +25,7 @@ class AnalystAdapterTests(unittest.TestCase):
             self.assertEqual(evidence["athena:weekly_revenue"]["request_id"], "req-weekly_revenue")
             return {"claim_id": claim["claim_id"], "outcome": "keep"}
         result = self.run_response(response, verifier=verifier, renderer=lambda p: seen.append(p))
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         self.assertEqual(len(seen), 1)
         self.assertEqual(response, before)
 

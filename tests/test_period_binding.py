@@ -154,7 +154,7 @@ def test_replay_period_guard_precedes_even_a_permissive_verifier(field, value):
 
 def test_replay_keeps_correct_period_under_explicit_test_verifier():
     result = replay(captured(envelope()), WEEK, expected_tool_names=["get_weekly_metric"], verifier=keep)
-    assert result.status == "complete" and len(result.claims) == 1
+    assert result.status == "partial" and len(result.claims) == 1
 
 
 def test_direct_adapter_rejects_inconsistent_draft_period():

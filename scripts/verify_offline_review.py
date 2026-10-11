@@ -18,11 +18,30 @@ TESTS = (
     "test_analyst_initialization_failure", "test_week_and_wording",
     "test_analyst_adapter", "test_real_olist_acceptance", "test_views", "test_report_renderer",
 )
-EXCLUDED = (
-    "golden", "model_cannot_choose", "wrong_week_repeat", "replay_rejects",
-    "postcheck_flags_evidence_for_another_week", "every_category", "plan_extremes",
-    "missing_anomaly", "known_anomaly", "partial_result_keeps", "largest_view",
-)
+EXCLUDED = frozenset({
+    "tests/test_postchecks.py::test_golden_s2_review_state_confidence_uses_rj",
+    "tests/test_week_and_wording.py::test_model_cannot_choose_another_week",
+    "tests/test_week_and_wording.py::test_wrong_week_repeat_is_still_a_duplicate",
+    "tests/test_week_and_wording.py::test_replay_rejects_a_capture_with_evidence_for_another_week",
+    "tests/test_views.py::test_every_category_and_state_group_is_shown",
+    "tests/test_views.py::test_plan_extremes_match_the_full_result",
+    "tests/test_views.py::test_missing_anomaly_statistics_stay_unknown",
+    "tests/test_views.py::test_known_anomaly_values_are_not_marked_unavailable",
+    "tests/test_views.py::test_partial_result_keeps_guidance_and_missing_values",
+    "tests/test_views.py::test_largest_view_stays_small",
+})
+
+
+class ExactDatabaseExclusions:
+    def pytest_collection_modifyitems(self, session, config, items):
+        found = {item.nodeid for item in items if item.nodeid in EXCLUDED}
+        if found != EXCLUDED:
+            import pytest
+            raise pytest.UsageError("database exclusion manifest changed: " + repr(sorted(EXCLUDED - found)))
+        deselected = [item for item in items if item.nodeid in EXCLUDED]
+        items[:] = [item for item in items if item.nodeid not in EXCLUDED]
+        config.hook.pytest_deselected(items=deselected)
+
 
 
 def deny_network(*args, **kwargs):
@@ -48,10 +67,10 @@ def main():
     os.chdir(ROOT)
     sys.path.insert(0, str(ROOT))
     print("OFFLINE REVIEW ONLY: Python network calls blocked; no model or AWS evaluation.", flush=True)
-    print("11 database-dependent checks excluded. Full golden-data acceptance remains unverified.", flush=True)
+    print("10 database-dependent checks excluded. Full golden-data acceptance remains unverified.", flush=True)
     import pytest
-    return pytest.main([*(f"tests/{name}.py" for name in TESTS), "-q", "-k",
-                        " and ".join(f"not {name}" for name in EXCLUDED)])
+    return pytest.main([*(f"tests/{name}.py" for name in TESTS), "-q"],
+                       plugins=[ExactDatabaseExclusions()])
 
 
 if __name__ == "__main__":

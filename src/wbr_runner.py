@@ -375,11 +375,19 @@ def verify_and_render(
         and not removed_claims
     )
 
-    status = "complete" if complete_tools and all_claims_supported else "partial"
+    selected_claims_verified = (complete_tools and all_claims_supported
+                                and not warnings
+                                and not any(c["requires_human_review"] for c in accepted_claims))
+    # Claim verification is not proof of Q1-Q3, named-group, delivery-signal
+    # or actionable-question coverage. No trusted coverage validator exists yet.
+    # Keep report certification fail-closed, including explicit custom verifiers.
+    warnings.append("mandatory report coverage verification unavailable; report remains PARTIAL")
+    status = "partial"
 
     renderer_input = {
         "label": label,
         "status": status,
+        "selected_claims_verified": selected_claims_verified,
         "tool_results": tool_results,
         "claims": accepted_claims,
         "removed_claims": removed_claims,

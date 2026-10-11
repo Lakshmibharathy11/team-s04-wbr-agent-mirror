@@ -18,7 +18,8 @@ class ReviewScorePolicyTests(unittest.TestCase):
                       "requires_human_review": False, "causal_language_allowed": False}
         self.env = {"tool_name": "get_weekly_metric", "status": "ok", "warnings": [],
                     "parameters": {"week": "2018-08-13", "compare_week": "2018-08-06",
-                                   "metric": "avg_review_score", "state": None, "category": None},
+                                   "metric": "avg_review_score", "state": None, "category": None,
+                                   "numeric_precision_digits": 2},
                     "data": {"metric": "avg_review_score", "current": 4.15, "previous": 4.0,
                              "change": .15, "change_type": "points", "current_base": 100,
                              "previous_base": 100, "baseline": {"weeks": 8}, "z_score": 2.0}}
@@ -117,7 +118,7 @@ class VerifiedFactPolicyTests(unittest.TestCase):
             self.assertFalse(claim["requires_human_review"])
             self.assertEqual(claim["confidence"], "medium")
             self.assertEqual(default(claim, ctx.evidence_log)["outcome"], "flag")
-            self.assertEqual(proposal(claim, ctx.evidence_log)["outcome"], "keep")
+            self.assertEqual(proposal(claim, ctx.evidence_log)["outcome"], "flag")  # undeclared historical precision
             requires_review = {**claim, "requires_human_review": True}
             self.assertEqual(proposal(requires_review, ctx.evidence_log)["outcome"], "flag")
         self.assertEqual(ctx.evidence_log, snapshot)
@@ -130,6 +131,7 @@ class VerifiedFactPolicyTests(unittest.TestCase):
         self.claim["statement"] = "health_beauty revenue fell 89% in SP."
         self.env["warnings"] = []
         self.env["parameters"]["compare_week"] = "2018-08-06"
+        self.env["parameters"]["numeric_precision_digits"] = 2
         self.env["data"].update(current_base=100, previous_base=100,
                                 baseline={"weeks": 8}, z_score=-2)
         self.verify = make_captured_verifier("2018-08-13", allow_verified_facts=True)
@@ -204,10 +206,111 @@ class VerifiedFactPolicyTests(unittest.TestCase):
         verifier = make_captured_verifier("2018-06-04", allow_verified_facts=True)
         result = run_analyst_week("2018-06-04", lambda week: response,
                                  expected_tool_names=handoff.TOOLS, verifier=verifier)
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         response["report_draft"]["claims"][0]["statement"] = "health_beauty revenue fell 95% in SP."
         result = run_analyst_week("2018-06-04", lambda week: response,
                                  expected_tool_names=handoff.TOOLS, verifier=verifier)
         self.assertEqual(result.status, "partial")
         self.assertEqual(result.removed_claims[0]["verifier_outcome"], "remove")
 
+
+
+class ReviewRemediationTests(unittest.TestCase):
+    def setUp(self):
+        fixture = VerifiedFactPolicyTests()
+        fixture.setUp()
+        self.claim, self.env = fixture.claim, fixture.env
+        self.verify = make_captured_verifier("2018-08-13", allow_verified_facts=True)
+
+    def outcome(self):
+        return self.verify(self.claim, {"req1": self.env})["outcome"]
+
+    def test_zero_magnitude_never_kept(self):
+        self.claim["statement"] = "health_beauty revenue fell 0% in SP."
+        self.env["data"].update(current=99.7, previous=100, change=-0.3)
+        self.assertEqual(self.outcome(), "remove")
+
+    def test_category_orders_cannot_use_ambiguous_wording(self):
+        self.claim["statement"] = "health_beauty orders fell 89% in SP."
+        self.env["parameters"]["metric"] = self.env["data"]["metric"] = "orders"
+        self.assertEqual(self.outcome(), "flag")
+
+    def test_disagreeing_or_extra_filters_are_unscoped(self):
+        for filters in [{"state_group": "RJ", "category_group": "health_beauty"},
+                        {"state_group": "SP", "category_group": "health_beauty", "extra": "x"}]:
+            self.env["parameters"]["filters"] = filters
+            self.assertEqual(self.outcome(), "flag")
+
+    def test_precision_must_be_declared_by_capture(self):
+        for precision in [None, 1, True]:
+            self.env["parameters"]["numeric_precision_digits"] = precision
+            self.assertEqual(self.outcome(), "flag")
+
+    def test_shared_threshold_change_blocks_old_quality(self):
+        from tools import config
+        original = config.MIN_ORDERS
+        try:
+            config.MIN_ORDERS = 101
+            self.assertEqual(self.outcome(), "flag")
+        finally:
+            config.MIN_ORDERS = original
+
+    def test_missing_draft_period_cannot_reach_permissive_verifier(self):
+        for key in ["week", "compare_week"]:
+            response = handoff.LakshmiHandoffTests().response()
+            del response["report_draft"][key]
+            calls = []
+            def keep(c, e):
+                calls.append(c)
+                return {"claim_id": c["claim_id"], "outcome": "keep"}
+            result = run_analyst_week("2018-06-04", lambda _: response,
+                                     expected_tool_names=handoff.TOOLS, verifier=keep)
+            self.assertEqual(result.status, "partial")
+            self.assertFalse(calls)
+            self.assertFalse(result.claims)
+
+    def test_one_verified_fact_is_not_complete_report(self):
+        response = handoff.LakshmiHandoffTests().response()
+        result = run_analyst_week("2018-06-04", lambda _: response,
+                                 expected_tool_names=handoff.TOOLS,
+                                 verifier=handoff.LakshmiHandoffTests.verifier)
+        self.assertEqual(result.claims[0]["verifier_outcome"], "keep")
+        self.assertEqual(result.status, "partial")
+        self.assertTrue(any("coverage verification unavailable" in w for w in result.warnings))
+
+    def test_runner_cannot_hide_uncited_envelope_warning(self):
+        response = handoff.LakshmiHandoffTests().response()
+        response["evidence_log"]["req-get_delivery_signals"]["warnings"] = ["SMALL_SAMPLE"]
+        result = run_analyst_week("2018-06-04", lambda _: response,
+                                 expected_tool_names=handoff.TOOLS,
+                                 verifier=handoff.LakshmiHandoffTests.verifier)
+        self.assertFalse(result.renderer_input["selected_claims_verified"])
+        self.assertIn("SMALL_SAMPLE", result.warnings)
+        self.assertEqual(result.status, "partial")
+
+    def test_point_zero_never_kept(self):
+        f = ReviewScorePolicyTests(); f.setUp()
+        f.claim["statement"] = "average review score rose 0 points."
+        f.env["data"].update(current=4.3, previous=4.0, change=0.3)
+        self.assertEqual(f.result()["outcome"], "remove")
+
+
+class ExclusionManifestTests(unittest.TestCase):
+    def test_exact_exclusions_leave_non_database_test_enabled(self):
+        from scripts.verify_offline_review import EXCLUDED, ExactDatabaseExclusions
+        from types import SimpleNamespace
+        observed = []
+        items = [SimpleNamespace(nodeid=n) for n in EXCLUDED]
+        wanted = "tests/test_week_and_wording.py::test_postcheck_flags_evidence_for_another_week"
+        items.append(SimpleNamespace(nodeid=wanted))
+        hook = SimpleNamespace(pytest_deselected=lambda items: observed.extend(items))
+        ExactDatabaseExclusions().pytest_collection_modifyitems(None, SimpleNamespace(hook=hook), items)
+        self.assertEqual([i.nodeid for i in items], [wanted])
+        self.assertEqual({i.nodeid for i in observed}, EXCLUDED)
+        self.assertEqual(len(observed), 10)
+
+    def test_missing_exclusion_fails_instead_of_silently_changing_count(self):
+        import pytest
+        from scripts.verify_offline_review import ExactDatabaseExclusions
+        with self.assertRaises(pytest.UsageError):
+            ExactDatabaseExclusions().pytest_collection_modifyitems(None, None, [])

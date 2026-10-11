@@ -78,7 +78,7 @@ class WBRRunnerTests(unittest.TestCase):
             renderer=renderer,
             verifier=trusted_test_verifier,
         )
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         self.assertEqual(result.rendered, "rendered")
         self.assertEqual(seen["label"], "SYNTHETIC")
 
@@ -142,7 +142,7 @@ class WBRRunnerTests(unittest.TestCase):
             verifier=trusted_test_verifier,
         )
         self.assertEqual(attempts["count"], 2)
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         self.assertTrue(any("retried once" in warning for warning in result.warnings))
 
     def test_default_verifier_never_keeps_claim_from_reference_membership_alone(self):

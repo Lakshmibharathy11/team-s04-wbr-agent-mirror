@@ -46,6 +46,7 @@ INCOMPLETE_WEEKS = {date(2018, 8, 20)}
 # ---------------------------------------------------------------------------
 # Small-sample thresholds
 # ---------------------------------------------------------------------------
+NUMERIC_PRECISION_DIGITS = 2  # declared by tool envelopes; historical captures may omit it
 MIN_ORDERS = 30   # minimum base for totals and averages (Central Limit Theorem rule of thumb)
 MIN_EVENTS = 10   # minimum count of the event itself for rates (e.g. late orders)
 

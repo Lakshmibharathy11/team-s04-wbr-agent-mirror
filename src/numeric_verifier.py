@@ -10,6 +10,7 @@ from decimal import Decimal
 from datetime import date, timedelta
 
 from .wbr_runner import default_verify_claim
+from tools import config
 
 
 CHANGE_CLAIM = re.compile(
@@ -32,6 +33,10 @@ def _series(envelope, metric, state, category, week):
     """Select precisely the stated metric, comparison week and filter slice."""
     params, data = envelope.get("parameters"), envelope.get("data")
     if not isinstance(params, Mapping) or not isinstance(data, Mapping):
+        return []
+    expected_filters = {k: v for k, v in (("state_group", params.get("state")),
+                                               ("category_group", params.get("category"))) if v is not None}
+    if "filters" in params and params["filters"] != expected_filters:
         return []
     if params.get("week") != week or params.get("metric") != metric or data.get("metric") != metric:
         return []
@@ -74,6 +79,8 @@ def make_captured_verifier(week, *, allow_verified_facts=False):
         match = CHANGE_CLAIM.fullmatch(claim["statement"])
         if not match or claim["claim_type"] != "fact":
             return fallback
+        if match["metric"] == "orders" and match["category"]:
+            return {**fallback, "reason": "category orders_with_category wording requires review"}
         metric = METRICS[match["metric"]]
         series = []
         captures = []
@@ -100,7 +107,7 @@ def make_captured_verifier(week, *, allow_verified_facts=False):
             # tolerance would falsely reject legitimate captures. Intersect
             # the possible arithmetic range with the reported-change range.
             c, p, delta = (Decimal(str(v)) for v in (current, previous, change))
-            half = Decimal("0.005")
+            half = Decimal(1).scaleb(-config.NUMERIC_PRECISION_DIGITS) / 2
             if p <= half:
                 return {**fallback, "reason": "numeric rounding leaves denominator uncertain"}
             lower = (max(Decimal(0), c - half) / (p + half) - 1) * 100
@@ -114,6 +121,9 @@ def make_captured_verifier(week, *, allow_verified_facts=False):
         if lower > upper + Decimal("0.000001"):
             return {**fallback, "reason": "conflicting numeric captures require review"}
         amount = Decimal(match["amount"])
+        if amount == 0:
+            return {"claim_id": claim["claim_id"], "outcome": "remove",
+                    "reason": "zero magnitude cannot state a rise or fall"}
         if amount < 0 or amount > 1000000:
             return fallback
         signed = -amount if match["direction"] == "fell" else amount
@@ -157,7 +167,7 @@ def _verify_review_change(claim, evidence, match, week, fallback, allow_verified
     if not series:
         return fallback
     intervals = []
-    half = Decimal("0.005")
+    half = Decimal(1).scaleb(-config.NUMERIC_PRECISION_DIGITS) / 2
     for item in series:
         current, previous, change = (item.get(k) for k in ("current", "previous", "change"))
         if (item.get("change_type") != "points" or item.get("data_issue")
@@ -174,6 +184,9 @@ def _verify_review_change(claim, evidence, match, week, fallback, allow_verified
     if lower > upper:
         return {**fallback, "reason": "conflicting review-score captures require review"}
     amount = Decimal(match["amount"])
+    if amount == 0:
+        return {"claim_id": claim["claim_id"], "outcome": "remove",
+                "reason": "zero magnitude cannot state a rise or fall"}
     if amount > 4:
         return fallback
     signed = -amount if match["direction"] == "fell" else amount
@@ -204,6 +217,8 @@ def _quality_and_confidence(series, captures, week):
         return False, None
     for capture in captures:
         params = capture["parameters"]
+        if params.get("numeric_precision_digits") != config.NUMERIC_PRECISION_DIGITS:
+            return False, None
         if params.get("compare_week") != comparison:
             return False, None
         if capture.get("status") != "ok" or not isinstance(capture.get("warnings"), list):
@@ -216,13 +231,13 @@ def _quality_and_confidence(series, captures, week):
             return False, None
         for key in ("current_base", "previous_base"):
             value = item.get(key)
-            if isinstance(value, bool) or not isinstance(value, int) or value < 30:
+            if isinstance(value, bool) or not isinstance(value, int) or value < config.MIN_ORDERS:
                 return False, None
         baseline = item.get("baseline")
         if not isinstance(baseline, Mapping):
             return False, None
         weeks = baseline.get("weeks")
-        if isinstance(weeks, bool) or not isinstance(weeks, int) or weeks < 8:
+        if isinstance(weeks, bool) or not isinstance(weeks, int) or weeks < config.BASELINE_WEEKS:
             return False, None
         if not _finite(item.get("z_score")):
             return False, None

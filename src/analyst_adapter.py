@@ -118,9 +118,9 @@ def run_analyst_week(
     wrong_periods = {rid: issue for rid, issue in wrong_periods.items() if issue}
     warnings.extend(f"{rid}: {issue}" for rid, issue in wrong_periods.items())
     draft_period_ok = not nested or (
-        draft.get("week", week) == week
-        and ("compare_week" not in draft or draft["compare_week"] ==
-             (date.fromisoformat(week) - timedelta(days=7)).isoformat())
+        draft.get("week") == week
+        and draft.get("compare_week") ==
+             (date.fromisoformat(week) - timedelta(days=7)).isoformat()
     )
     if not draft_period_ok:
         warnings.append("analyst draft period does not match run week")

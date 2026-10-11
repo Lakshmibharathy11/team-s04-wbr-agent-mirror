@@ -1,33 +1,23 @@
-# Verifier completion review
+# Verifier completion review — revised after independent Claude challenge
 
-The current offline S1 report is PARTIAL because its three prose findings remain flagged. This is separate from database acceptance. A corrected live run with the current default verifier can still be partial even with correct tool periods and accurate numbers.
+The user supplied Claude's review of candidate 65a6abc. Its verdict was MODIFY for offline integration and STOP for the proposed numeric policy. Claude reported running 132 tests and 43 subtests plus direct probes; it could not reproduce the pytest launcher or independently authenticate the commit. The supplied archive was independently assembled here against GitHub's exact tree: all 106 Git blob hashes matched. This establishes archive provenance, not independent approval.
 
-## Confirmed behavior
+## Reproduced defects and revised behavior
 
-The fallback in src/wbr_runner.py never keeps a claim solely because citations exist. src/numeric_verifier.py checks a deliberately narrow additive-metric percentage grammar. Matching numbers remain flagged by default. Its allow_verified_facts opt-in is a proposed policy tested against synthetic evidence; it is not enabled by this change.
+The old launcher excluded a non-database postcheck test using broad name filters. Its expected issue list was stale: correct behavior emitted both evidence_wrong_week and evidence_week_mismatch. The assertion is corrected and runs. The launcher now selects exactly ten database-dependent node IDs and fails if any expected exclusion is absent. Regressions check exact deselection and fail-closed manifest drift. The earlier claim that all eleven exclusions required a database was incorrect; the old 206 count does not certify this revised candidate.
 
-The candidate now also checks a narrow average review-score point-change grammar. It reconciles the rounded current/previous means and reported difference, uses only the exact cited metric/week/slice, limits scores to the valid 1–5 range, and preserves the same quality/confidence and explicit opt-in requirements. It verifies neither unusualness nor causation. Eight focused regressions cover opt-in behavior, wrong direction/amount, percent and prose rejection, invalid/inconsistent evidence, quality/review flags, wrong scope/period, excessive precision and conflicting captures.
+Whole-report COMPLETE certification is now withheld in both the shared runner and HTML renderer. Verifying individual claims does not establish Q1-Q3 coverage, named states/categories, delivery interpretation or two/three actionable questions. There is no trusted independently reviewed coverage validator yet. A future validator is outstanding; this change does not pretend to implement one. A custom permissive verifier can preserve a selected claim but cannot certify the report. The runner exposes selected_claims_verified separately and it is false for any accumulated warning or mandatory human-review flag. Tool warnings and unavailable evidence appear next to the report badge as well as in the report.
 
-Replaying the unmodified earlier S1 capture with either the default verifier or the proposed numeric opt-in returns PARTIAL and three flag outcomes. Two claims require human review; one returns semantic verification unavailable. None matches the supported atomic fact grammar. Recorded delivery and category/state slices also contain small-sample warnings.
+Nested drafts must explicitly supply both run week and previous comparison week; missing periods fail before a delegated verifier executes. Legacy lists remain unable to establish report completion.
 
-## Prompt preparation change
+The proposed numeric policy remains disabled by default and under STOP. Additional restrictions remove zero-magnitude rise/fall assertions, flag ambiguous category-orders wording (physical metric orders_with_category), and reject mismatched or extra declared filters as support. Thresholds use tools.config.MIN_ORDERS and BASELINE_WEEKS. Rounding uses shared NUMERIC_PRECISION_DIGITS, also used by the tool builder and explicitly declared in new tool parameters. Opt-in keep requires matching declared precision; preserved historical captures lack that declaration and now remain flagged even for generated atomic diagnostics. They are never retroactively edited or stamped with precision metadata.
 
-The analyst is instructed to keep revenue, orders and items percentage facts atomic and separate from association or interpretation. The grammar uses an optional exact category prefix, lowercase metric, fell/rose, reported percentage, and optional exact state suffix. Each fact must cite its own metric/week/filter evidence. Example values are explicitly illustrative, not defaults.
+## Scope and verification
 
-Warnings take precedence over compact wording. Review-score changes, unusualness, change shares and delivery associations are not silently recast as supported facts or discarded to get a complete badge. Their semantic review remains necessary.
+Regression coverage includes zero percentages and point changes, category orders, filter mismatch, undeclared precision, shared threshold changes, missing draft periods, one-fact completion, uncited warnings, renderer errors and exclusion accounting. The revised network-blocked suite passes 219 tests and 43 subtests; exactly ten database-dependent checks remain excluded.
 
-This change does not alter confidence, quality thresholds, verifier defaults, human-review flags or historical captures. It prepares output for existing bounded verification; it does not establish live prompt compliance or authorize a new run.
+The original saved S1 remains PARTIAL; the wrong-week capture remains REJECTED. New tool precision metadata has only offline coverage here, not a newly executed Athena query or model run. No corrected live success, full golden-data acceptance, browser layout acceptance or independent approval of this revision is claimed.
 
-## Independent review and acceptance needed
+## Remaining decisions
 
-An offline policy diagnostic against the original saved tool envelopes supports three generated atomic assertions: revenue fell 15.32%; orders fell 9.89%; health_beauty revenue fell 49.6%. Each cites only its matching unfiltered-state metric result, and postchecks derive medium confidence with no human-review requirement. The proposed opt-in keeps those bounded assertions; the default still flags them. A regression verifies the postcheck/policy agreement, preserves a mandatory human-review flag when present, and checks that capture bytes and envelopes remain unchanged.
-
-These generated assertions are not the original model claims, a newly executed query, a new complete model report or proof of Q2/overall task coverage. The historical report remains PARTIAL. This positive diagnostic reduces uncertainty about the bounded policy's use on these particular captures; independent approval of the policy remains outstanding.
-
-The recorded-evidence regression additionally checks the generated Q2 assertion “average review score rose 0.15 points.” Postchecks derive medium confidence without a human-review requirement and the proposed point verifier keeps it. This verifies a bounded Q2 difference only, not the review-state/delivery interpretation or complete Q2 investigation. The latest network-blocked suite passes 206 tests and 43 subtests; 11 golden-database checks remain excluded. Saved captures and demo pages are unchanged.
-
-Review the exact numeric policy before using it outside its synthetic tests. Evaluate whether its arithmetic rounding intervals, all-citations scope, quality thresholds and confidence rule are appropriate for real golden-data outputs. Reviewers must reconcile postcheck confidence with verifier confidence and preserve every mandatory coverage requirement.
-
-Full golden-data acceptance, independent code/policy review, browser layout review and freshly authorized corrected live validation remain outstanding. A COMPLETE numeric report would certify only its bounded selected facts under the configured policy; it would not prove causes, all prose or end-to-end usefulness to a real analyst.
-
-Do not edit the saved S1 claims or suppress their review flags to fabricate a successful demo. No paid run, merge, public release or submission is authorized by this preparation.
+Re-review this revised candidate. Keep allow_verified_facts disabled. Review a real coverage validator separately before permitting whole-report COMPLETE. Full golden database acceptance, browser review and a freshly authorized bounded live test remain outstanding. No spending, merge, publication or submission is authorized by the review or this remediation.

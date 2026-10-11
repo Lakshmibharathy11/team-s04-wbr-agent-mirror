@@ -26,7 +26,7 @@ def test_neutral_description_can_reach_test_verifier():
     run['report_draft']['claims'][0]['statement'] = 'SP accounts for 46.28% of the total change.'
     out = run_analyst_week(WEEK, lambda _: run,
                            expected_tool_names=['get_weekly_metric'], verifier=keep)
-    assert out.status == 'complete'
+    assert out.status == 'partial'
 
 def test_demo_viewer_rejects_wrong_week_and_withholds_claims(capsys):
     root=Path(__file__).resolve().parents[1]

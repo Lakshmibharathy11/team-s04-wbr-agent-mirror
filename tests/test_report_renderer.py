@@ -35,7 +35,7 @@ def render(p):
 
 def test_complete_findings_link_to_evidence(payload):
     html = render(payload)
-    assert '<span class="badge">COMPLETE</span>' in html
+    assert '<span class="badge">PARTIAL</span>' in html
     assert 'href="#evidence-0"' in html
     assert 'Synthetic revenue declined' in html
 
@@ -115,3 +115,17 @@ def test_demo_replays_real_and_derived_examples_without_mutating_capture(tmp_pat
     for claim in bad['results'][0]['runs'][0]['report_draft']['claims']:
         assert claim['statement'] not in rejected
     assert '2018-08-20' in rejected
+
+
+def test_uncited_error_and_warning_cannot_be_complete(payload):
+    from copy import deepcopy
+    extra = deepcopy(payload['tool_results'][0])
+    extra.update(request_id='uncited', status='error', evidence_refs=[], data={},
+                 error='SECRET', warnings=['SMALL_SAMPLE'])
+    payload['tool_results'].append(extra)
+    html = render(payload)
+    assert '<span class="badge">PARTIAL</span>' in html
+    header = html.split('</header>')[0]
+    assert 'SMALL_SAMPLE' in header
+    assert 'partial or unavailable' in header
+    assert 'SECRET' not in html

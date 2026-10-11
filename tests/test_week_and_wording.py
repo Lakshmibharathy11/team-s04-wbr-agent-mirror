@@ -68,7 +68,7 @@ def test_wrong_week_repeat_is_still_a_duplicate():
 # ------------------------------------------------- evidence week checks
 def test_postcheck_flags_evidence_for_another_week():
     claim, issues = finalize_one("Revenue fell this week.", env(NEXT_WEEK, REPORT_WEEK))
-    assert [i["issue"] for i in issues] == ["evidence_wrong_week"]
+    assert {i["issue"] for i in issues} == {"evidence_wrong_week", "evidence_week_mismatch"}
     assert claim["requires_human_review"] is True
 
 

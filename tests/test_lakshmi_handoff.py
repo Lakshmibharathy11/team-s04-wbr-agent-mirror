@@ -26,7 +26,7 @@ class LakshmiHandoffTests(unittest.TestCase):
         claims = good_claims([])
         claims[0]["supporting_evidence"] = ["req-get_weekly_metric"]
         return {"run": {"status": "ok"}, "evidence_log": log,
-                "report_draft": {"week": "2018-06-04", "claims": claims,
+                "report_draft": {"week": "2018-06-04", "compare_week": "2018-05-28", "claims": claims,
                                  "draft_status": "COMPLETE", "unavailable": [],
                                  "precheck_issues": [], "actionable_questions": ["What changed?"]},
                 "transcript": [{"role": "tool", "content": "view"}], "calls": []}
@@ -49,7 +49,7 @@ class LakshmiHandoffTests(unittest.TestCase):
             self.assertEqual(claim["supporting_evidence"], ["req-get_weekly_metric"])
             return self.verifier(claim, evidence)
         result = self.run_response(response, verifier=verifier)
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         self.assertEqual(response, original)
         self.assertEqual(result.tool_results[0]["source_envelope"], original["evidence_log"]["req-get_weekly_metric"])
 
@@ -83,7 +83,7 @@ class LakshmiHandoffTests(unittest.TestCase):
         e = capture("get_weekly_metric", "req-another")
         response["evidence_log"]["req-another"] = e
         result = self.run_response(response)
-        self.assertEqual(result.status, "complete")
+        self.assertEqual(result.status, "partial")
         self.assertEqual(len(result.tool_results), 4)
 
     def test_draft_partial_unavailable_or_precheck_never_complete(self):
