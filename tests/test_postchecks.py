@@ -112,15 +112,17 @@ def _finalize_with(calls, envs):
     return finalize(draft, ctx)
 
 
-def test_corrected_validation_error_is_not_unavailable():
+def test_retried_validation_error_stays_unavailable():
+    # Reviewer rule: a later success (even for a different state/category) never clears it
     bad = {"tool_name": "get_breakdown", "status": "error", "warnings": [],
            "error": {"type": "validation", "message": "Unknown category"}}
     good = breakdown(GROUPS)
     args = {"metric": "product_revenue", "dimension": "state", "category": "beauty"}
-    calls = [_call(1, "get_breakdown", args, "error", "r1"),
-             _call(2, "get_breakdown", {**args, "category": "health_beauty"}, "ok", "r2")]
-    out = _finalize_with(calls, {"r1": bad, "r2": good})
-    assert out["unavailable"] == [] and out["draft_status"] == "COMPLETE"
+    for later in ({**args, "category": "health_beauty"}, {**args, "category": "toys"}):
+        calls = [_call(1, "get_breakdown", args, "error", "r1"),
+                 _call(2, "get_breakdown", later, "ok", "r2")]
+        out = _finalize_with(calls, {"r1": bad, "r2": good})
+        assert len(out["unavailable"]) == 1 and out["draft_status"] == "PARTIAL", later
 
 
 def test_uncorrected_validation_error_is_unavailable():

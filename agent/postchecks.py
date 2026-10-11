@@ -86,20 +86,6 @@ def _confidence(cited: list[dict], statement: str) -> str:
     return "high" if max(_max_abs_z(e, statement) for e in cited) >= 3 else "medium"
 
 
-def _corrected(call: dict, ctx) -> bool:
-    """A call rejected for invalid input (error type validation) that the agent then
-    made again correctly: same tool, metric and dimension, later step, status ok or
-    partial. That data was checked, so it is not unavailable and does not make the
-    report PARTIAL. Data errors (timeout, malformed_data, ...) always count."""
-    env = ctx.evidence_log.get(call["request_id"]) or {}
-    if (env.get("error") or {}).get("type") != "validation":
-        return False
-    key = (call["tool"], call["args"].get("metric"), call["args"].get("dimension"))
-    return any((c["tool"], c["args"].get("metric"), c["args"].get("dimension")) == key
-               and c["step"] > call["step"] and c["status"] in ("ok", "partial")
-               for c in ctx.calls)
-
-
 def _failure_note(call: dict, ctx) -> str:
     """A readable line for the report, e.g.
     'get_weekly_metric avg_review_score (state RJ) failed: timeout'."""
@@ -150,7 +136,7 @@ def finalize(draft, ctx) -> dict:
     # Anything that failed is unavailable, whether or not the model listed it
     unavailable = list(draft.unavailable)
     for call in ctx.calls:
-        if call["status"] == "error" and not _corrected(call, ctx):
+        if call["status"] == "error":   # every failed call stays visible, retried or not
             note = _failure_note(call, ctx)
             if note not in unavailable:
                 unavailable.append(note)

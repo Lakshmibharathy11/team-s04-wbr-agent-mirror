@@ -1,8 +1,8 @@
-"""Tool status rules on the golden data.
+"""Tool status rules on the golden data (team acceptance rule).
 
-A missing state group in an EARLIER baseline week must not make a result partial:
-the reported values are complete; that week is only left out of the baseline.
-A missing group in a COMPARED week still makes it partial (S7).
+Any week with a missing state group, compared or baseline, makes the total partial
+with NO_DATA. A baseline week that was left out is also listed in
+baseline.excluded_weeks, so the reason is visible.
 
     python -m pytest tests/test_tool_status.py -q
 """
@@ -32,8 +32,8 @@ def test_compared_week_missing_is_partial():
         assert env["status"] == "partial" and "NO_DATA" in codes(env), week
 
 
-def test_baseline_week_missing_is_not_partial():
+def test_baseline_week_missing_is_partial_and_listed():
     week = S7 + timedelta(days=21)                  # S7 is only in the baseline here
     env = get_weekly_metric("product_revenue", week.isoformat())
-    assert "NO_DATA" not in codes(env)
+    assert env["status"] == "partial" and "NO_DATA" in codes(env)
     assert S7.isoformat() in env["data"]["baseline"].get("excluded_weeks", [])

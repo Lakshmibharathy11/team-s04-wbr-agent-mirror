@@ -14,13 +14,16 @@ Differences it bridges:
   name stays in source_tool_name.
 - no new queries: the runner calls each tool and retries failures once. Here every
   "tool" replays the recorded envelope, so a retry repeats nothing on Athena.
-- validation errors the agent corrected with a later successful call are left out,
-  the same rule agent/postchecks.py uses for 'unavailable'; they are listed in
-  excluded_calls so nothing is hidden.
+- every recorded call is passed on, failed ones included (nothing is left out).
+
+OPEN (reviewer findings, not fixed here yet; do not treat this adapter as final):
+- report-level limits (draft_status PARTIAL, unavailable, precheck_issues, run status)
+  are not passed into run_wbr;
+- expected_tool_names is built from the calls the agent made, so a skipped call can
+  never show as missing; it must come from an independent expected plan;
+- renamed tool names can bypass a selector that looks results up by the original
+  name; the original envelope should be kept (source_envelope) or matching tested.
 """
-
-from agent.postchecks import _corrected
-
 
 def call_label(call: dict) -> str:
     args = call["args"]
@@ -50,23 +53,14 @@ def to_runner_envelope(env: dict, name: str) -> dict:
     return out
 
 
-class _Ctx:   # what postchecks._corrected needs
-    def __init__(self, evidence_log, calls):
-        self.evidence_log, self.calls = evidence_log, calls
-
-
 def runner_inputs(run: dict):
     """From a run_analyst() result (or a saved run with report_draft, evidence_log, calls):
     returns (tool_calls, analyst, expected_tool_names, excluded_calls) for run_wbr()."""
     if not run.get("report_draft"):
         raise ValueError("run has no report_draft (the run did not finish)")
     evidence, calls = run["evidence_log"], run["calls"]
-    ctx = _Ctx(evidence, calls)
-    tool_calls, names, excluded = [], [], []
+    tool_calls, names, excluded = [], [], []   # excluded stays empty: nothing is dropped
     for call in calls:
-        if call["status"] == "error" and _corrected(call, ctx):
-            excluded.append({**call, "reason": "invalid input, corrected by a later call"})
-            continue
         name = base = call_label(call)
         n = 2
         while name in names:          # only if two calls share a label

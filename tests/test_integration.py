@@ -79,15 +79,17 @@ def test_causal_claim_is_flagged_by_the_default_verifier():
     assert result.claims[0]["verifier_reason"] == "unsupported causal language"
 
 
-def test_corrected_validation_error_is_excluded_and_listed():
+def test_failed_validation_call_is_passed_on_not_dropped():
     w = KEYS["S1"]["week"]
     steps = [call("get_breakdown", metric="product_revenue", week=w, dimension="category"),
              call("get_breakdown", metric="product_revenue", week=w, dimension="state", category="beauty"),
              call("get_breakdown", metric="product_revenue", week=w, dimension="state", category="health_beauty"),
              report(("Q3", "health_beauty revenue fell, mostly in SP.", "fact", [0, 2]))]
-    result, excluded = through_runner(run("S1", steps))
-    assert len(excluded) == 1 and excluded[0]["args"]["category"] == "beauty"
-    assert result.status == "complete"
+    out = run("S1", steps)
+    result, excluded = through_runner(out)
+    assert excluded == [] and len(result.tool_results) == 3
+    assert any(r["status"] == "error" for r in result.tool_results)
+    assert result.status == "partial" and out["report_draft"]["draft_status"] == "PARTIAL"
 
 
 def test_acceptance_fixture_shape():

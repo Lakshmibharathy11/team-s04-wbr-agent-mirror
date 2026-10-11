@@ -15,8 +15,7 @@ GUIDANCE = {
 }
 # An invalid input is the agent's own mistake, not missing data: fix it and call again
 VALIDATION_GUIDANCE = ("The input was invalid. Fix it using the error message and call again. "
-                       "Do not report any value from this call or cite it. If the corrected call "
-                       "succeeds, do not list this one under 'unavailable'.")
+                       "Do not report any value from this call or cite it.")
 
 
 def _series(d: dict) -> dict:
