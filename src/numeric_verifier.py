@@ -95,6 +95,8 @@ def make_captured_verifier(week, *, allow_verified_facts=False):
                 captures.append(envelope)
         if not series:
             return fallback
+        if _precision_mismatch(captures):
+            return {**fallback, "reason": "capture precision differs from verifier; review required"}
         intervals = []
         for item in series:
             current, previous, change = (item.get(k) for k in ("current", "previous", "change"))
@@ -166,6 +168,8 @@ def _verify_review_change(claim, evidence, match, week, fallback, allow_verified
             captures.append(env)
     if not series:
         return fallback
+    if _precision_mismatch(captures):
+        return {**fallback, "reason": "capture precision differs from verifier; review required"}
     intervals = []
     half = Decimal(1).scaleb(-config.NUMERIC_PRECISION_DIGITS) / 2
     for item in series:
@@ -206,6 +210,16 @@ def _verify_review_change(claim, evidence, match, week, fallback, allow_verified
     return {**fallback, "reason": "review-score point change matches; semantic/confidence review remains"}
 
 
+def _precision_mismatch(captures):
+    for capture in captures:
+        params = capture["parameters"]
+        if "numeric_precision_digits" in params:
+            digits = params["numeric_precision_digits"]
+            if type(digits) is not int or digits != config.NUMERIC_PRECISION_DIGITS:
+                return True
+    return False
+
+
 def _quality_and_confidence(series, captures, week):
     """Conservative proposed rule; never borrow another slice's strongest z."""
     try:
@@ -217,7 +231,9 @@ def _quality_and_confidence(series, captures, week):
         return False, None
     for capture in captures:
         params = capture["parameters"]
-        if params.get("numeric_precision_digits") != config.NUMERIC_PRECISION_DIGITS:
+        if (type(params.get("numeric_precision_digits")) is not int
+                or params["numeric_precision_digits"] != config.NUMERIC_PRECISION_DIGITS
+                or "filters" not in params):
             return False, None
         if params.get("compare_week") != comparison:
             return False, None

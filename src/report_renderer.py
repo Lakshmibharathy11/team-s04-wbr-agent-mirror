@@ -75,7 +75,9 @@ def render_report(payload, *, week, scenario, source_commit, mode):
     # Never turn a caller's complete flag into whole-report certification.
     status = 'REJECTED' if rejected or period_bad else 'PARTIAL'
     warnings = ''.join(f'<li>{text(w)}</li>' for w in payload.get('warnings', []))
-    badge_warnings = ''.join(f'<li>{text(w)}</li>' for e in envelopes for w in e['warnings'])
+    badge_items = list(dict.fromkeys([str(w) for w in payload.get('warnings', [])]
+                                    + [w for e in envelopes for w in e['warnings']]))
+    badge_warnings = ''.join(f'<li>{text(w)}</li>' for w in badge_items)
     if any(e['status'] != 'ok' for e in envelopes):
         badge_warnings += '<li>Some tool evidence is partial or unavailable.</li>'
     badge_warnings = '<ul>' + badge_warnings + '</ul>' if badge_warnings else ''

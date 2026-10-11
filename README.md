@@ -59,7 +59,7 @@ python3 -m venv .venv
 
 Open `demo/review/index.html` locally. The builder reads saved captures and derives an explicitly synthetic failure example; it does not call a model or AWS. The report shows current verifier status, review findings and linked query evidence. Wrong-period captures withhold all claims. This is a review/demo preparation path, not a live evaluation.
 
-The revised selected engineering suite passes 219 tests and 43 subtests. Exactly ten database-dependent checks are excluded until `data/golden.duckdb` is supplied. The founder also reproduced the earlier 187-test suite on his Mac. Browser visual QA, independent review, full golden-data acceptance and a corrected live test remain pending. See [the demo handoff](docs/DEMO_HANDOFF_2026-10-11.md) for recording instructions and current limits.
+The revised selected engineering suite passes 223 tests and 47 subtests. Exactly ten database-dependent checks are excluded until `data/golden.duckdb` is supplied. The founder also reproduced the earlier 187-test suite on his Mac. Browser visual QA, independent review, full golden-data acceptance and a corrected live test remain pending. See [the demo handoff](docs/DEMO_HANDOFF_2026-10-11.md) for recording instructions and current limits.
 
 The database files are excluded from Git. Obtain the existing team's database with its checksum and build provenance before full data acceptance; this quickstart never downloads or invents it.
 

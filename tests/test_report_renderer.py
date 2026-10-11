@@ -129,3 +129,10 @@ def test_uncited_error_and_warning_cannot_be_complete(payload):
     assert 'SMALL_SAMPLE' in header
     assert 'partial or unavailable' in header
     assert 'SECRET' not in html
+
+
+def test_runner_warning_visible_in_header(payload):
+    payload['warnings'] = ['analyst draft period does not match run week']
+    html = render(payload)
+    assert payload['warnings'][0] in html.split('</header>')[0]
+    assert '<span class="badge">PARTIAL</span>' in html

@@ -19,7 +19,7 @@ class ReviewScorePolicyTests(unittest.TestCase):
         self.env = {"tool_name": "get_weekly_metric", "status": "ok", "warnings": [],
                     "parameters": {"week": "2018-08-13", "compare_week": "2018-08-06",
                                    "metric": "avg_review_score", "state": None, "category": None,
-                                   "numeric_precision_digits": 2},
+                                   "numeric_precision_digits": 2, "filters": {}},
                     "data": {"metric": "avg_review_score", "current": 4.15, "previous": 4.0,
                              "change": .15, "change_type": "points", "current_base": 100,
                              "previous_base": 100, "baseline": {"weeks": 8}, "z_score": 2.0}}
@@ -132,6 +132,7 @@ class VerifiedFactPolicyTests(unittest.TestCase):
         self.env["warnings"] = []
         self.env["parameters"]["compare_week"] = "2018-08-06"
         self.env["parameters"]["numeric_precision_digits"] = 2
+        self.env["parameters"]["filters"] = {"state_group": "SP", "category_group": "health_beauty"}
         self.env["data"].update(current_base=100, previous_base=100,
                                 baseline={"weeks": 8}, z_score=-2)
         self.verify = make_captured_verifier("2018-08-13", allow_verified_facts=True)
@@ -314,3 +315,30 @@ class ExclusionManifestTests(unittest.TestCase):
         from scripts.verify_offline_review import ExactDatabaseExclusions
         with self.assertRaises(pytest.UsageError):
             ExactDatabaseExclusions().pytest_collection_modifyitems(None, None, [])
+
+
+class PrecisionMismatchReviewTests(unittest.TestCase):
+    def test_mismatched_percentage_precision_flags_before_contradiction(self):
+        f = VerifiedFactPolicyTests(); f.setUp()
+        f.claim["statement"] = "health_beauty revenue fell 15.34% in SP."
+        f.env["parameters"]["numeric_precision_digits"] = 1
+        f.env["data"].update(current=84.7, previous=100, change=-15.3)
+        for enabled in [False, True]:
+            with self.subTest(enabled=enabled):
+                result = make_captured_verifier("2018-08-13", allow_verified_facts=enabled)(f.claim, {"req1": f.env})
+                self.assertEqual(result["outcome"], "flag")
+                self.assertIn("precision", result["reason"])
+
+    def test_mismatched_point_precision_flags_before_contradiction(self):
+        f = ReviewScorePolicyTests(); f.setUp()
+        f.claim["statement"] = "average review score rose 0.24 points."
+        f.env["parameters"]["numeric_precision_digits"] = 1
+        f.env["data"].update(current=4.2, previous=4.0, change=.2)
+        for enabled in [False, True]:
+            with self.subTest(enabled=enabled):
+                self.assertEqual(f.result(enabled)["outcome"], "flag")
+
+    def test_missing_filters_cannot_keep_fact(self):
+        f = VerifiedFactPolicyTests(); f.setUp()
+        del f.env["parameters"]["filters"]
+        self.assertEqual(f.outcome(), "flag")

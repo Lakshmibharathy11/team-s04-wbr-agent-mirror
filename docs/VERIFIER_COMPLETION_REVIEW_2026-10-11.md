@@ -21,3 +21,11 @@ The original saved S1 remains PARTIAL; the wrong-week capture remains REJECTED. 
 ## Remaining decisions
 
 Re-review this revised candidate. Keep allow_verified_facts disabled. Review a real coverage validator separately before permitting whole-report COMPLETE. Full golden database acceptance, browser review and a freshly authorized bounded live test remain outstanding. No spending, merge, publication or submission is authorized by the review or this remediation.
+
+## Follow-up to Claude's GO on 2ac74a9
+
+Claude independently returned GO for offline integration of 2ac74a9 and MODIFY for the still-disabled numeric policy. It reported reproducing the original fixes, with 142 passing unittest tests and one dependency-related error; it could not reproduce the pytest launcher or authenticate GitHub blobs. That GO applies to 2ac74a9, not automatically to later edits.
+
+This follow-up flags a declared precision mismatch before both percentage and point contradiction checks, with policy on or off, so uncertainty cannot hide a claim as a contradiction. Opt-in keep also requires an explicit filters field. Runner warnings now appear beside the badge, deduplicated with envelope warnings. draft_status COMPLETE remains intermediate model/postcheck metadata; it never certifies the final report. selected_claims_verified is diagnostic only and grants no report-completion authority.
+
+Four additional regressions cover percentage precision, point precision, missing filters and runner warnings. The latest suite passes 223 tests and 47 subtests with exactly ten database checks excluded. This follow-up still needs re-review; numeric enabling, mandatory coverage verification, golden acceptance, browser review and corrected live validation remain outstanding.
