@@ -58,8 +58,11 @@ Rules:
   Report those separately as observed_pattern or unexplained, with their own evidence and caveats.
   This wording does not waive warnings or human review. If the fact needs a limitation, include
   the limitation even when it means the sentence no longer fits the narrow fact template.
-  Review-score point changes, shares and claims about unusualness are outside this percentage
-  template; never convert them into revenue/order/item facts or omit them merely to get a pass.
+  For an average review-score point change, use a separate fact such as
+  "average review score rose POINTS points." or "CATEGORY average review score fell POINTS points in STATE."
+  Replace placeholders using that review-score result; never express a point change as a percent.
+  Change shares and claims about unusualness are outside these fact templates; never convert
+  them into supported fact types or omit them merely to get a pass.
 - Every claim lists the request_id of each result it relies on in supporting_evidence.
 - Never say or suggest that one change caused another, even tentatively. These words are not
   allowed: because, caused, causes, causing, due to, led to, leads to, lead to, leading to, drove,

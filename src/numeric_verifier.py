@@ -18,6 +18,10 @@ CHANGE_CLAIM = re.compile(
     r"(?P<amount>\d+(?:\.\d+)?)%"
     r"(?: in (?P<state>[A-Z]{2}|Other))?\.?", re.ASCII)
 METRICS = {"revenue": "product_revenue", "orders": "orders", "items": "items"}
+REVIEW_CHANGE_CLAIM = re.compile(
+    r"(?:(?P<category>[a-z][a-z0-9_]*) )?average review score "
+    r"(?P<direction>fell|rose) (?P<amount>\d+(?:\.\d+)?) points"
+    r"(?: in (?P<state>[A-Z]{2}|Other))?\.?", re.ASCII)
 
 
 def _finite(value):
@@ -63,6 +67,10 @@ def make_captured_verifier(week, *, allow_verified_facts=False):
         fallback = default_verify_claim(claim, evidence)
         if fallback["outcome"] == "remove" or fallback["reason"] == "unsupported causal language":
             return fallback
+        review_match = REVIEW_CHANGE_CLAIM.fullmatch(claim["statement"])
+        if review_match and claim["claim_type"] == "fact":
+            return _verify_review_change(claim, evidence, review_match, week,
+                                         fallback, allow_verified_facts)
         match = CHANGE_CLAIM.fullmatch(claim["statement"])
         if not match or claim["claim_type"] != "fact":
             return fallback
@@ -132,6 +140,57 @@ def make_captured_verifier(week, *, allow_verified_facts=False):
                         "reason": "bounded numeric fact and scoped confidence verified"}
         return {**fallback, "reason": "numeric percentage matches; semantic/confidence review remains"}
     return verify
+
+
+def _verify_review_change(claim, evidence, match, week, fallback, allow_verified_facts):
+    """Only a bounded difference of mean review scores, never unusualness or cause."""
+    series, captures = [], []
+    for ref in set(claim["supporting_evidence"]):
+        env = evidence[ref]
+        if env.get("status") not in {"ok", "partial"}:
+            continue
+        env = env.get("source_envelope", env)
+        selected = _series(env, "avg_review_score", match["state"], match["category"], week)
+        series.extend(selected)
+        if selected:
+            captures.append(env)
+    if not series:
+        return fallback
+    intervals = []
+    half = Decimal("0.005")
+    for item in series:
+        current, previous, change = (item.get(k) for k in ("current", "previous", "change"))
+        if (item.get("change_type") != "points" or item.get("data_issue")
+                or not all(_finite(v) for v in (current, previous, change))
+                or not (1 <= current <= 5 and 1 <= previous <= 5)):
+            return {**fallback, "reason": "review-score evidence incomplete or malformed"}
+        c, p, delta = (Decimal(str(v)) for v in (current, previous, change))
+        lower = max(max(Decimal(1), c-half) - min(Decimal(5), p+half), delta-half)
+        upper = min(min(Decimal(5), c+half) - max(Decimal(1), p-half), delta+half)
+        if lower > upper:
+            return {**fallback, "reason": "review-score evidence is internally inconsistent"}
+        intervals.append((lower, upper))
+    lower, upper = max(i[0] for i in intervals), min(i[1] for i in intervals)
+    if lower > upper:
+        return {**fallback, "reason": "conflicting review-score captures require review"}
+    amount = Decimal(match["amount"])
+    if amount > 4:
+        return fallback
+    signed = -amount if match["direction"] == "fell" else amount
+    half_unit = Decimal(1).scaleb(amount.as_tuple().exponent) / 2
+    direction_impossible = lower >= 0 if match["direction"] == "fell" else upper <= 0
+    if direction_impossible or upper < signed-half_unit or lower > signed+half_unit:
+        return {"claim_id": claim["claim_id"], "outcome": "remove",
+                "reason": "claimed point change contradicts scoped captured evidence"}
+    certain_direction = upper < 0 if match["direction"] == "fell" else lower > 0
+    quality, confidence = _quality_and_confidence(series, captures, week)
+    if (allow_verified_facts and not claim["requires_human_review"]
+            and certain_direction and lower >= signed-half_unit and upper <= signed+half_unit
+            and quality and len(captures) == len(set(claim["supporting_evidence"]))
+            and claim["confidence"] == confidence and claim["causal_language_allowed"] is False):
+        return {"claim_id": claim["claim_id"], "outcome": "keep",
+                "reason": "bounded review-score point change and scoped confidence verified"}
+    return {**fallback, "reason": "review-score point change matches; semantic/confidence review remains"}
 
 
 def _quality_and_confidence(series, captures, week):
