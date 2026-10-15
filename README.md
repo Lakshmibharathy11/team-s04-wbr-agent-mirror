@@ -1,4 +1,4 @@
-﻿# Team S04 â€” Weekly Business Review Agent
+﻿# Team S04 - ” Weekly Business Review Agent "
 
 AWS Community Day Bay Area Hackathon 2026 Â· Challenge: "Hand it off"
 
@@ -101,10 +101,10 @@ A freshly authorized, bounded live validation of the corrected agent; a trusted 
 
 ## Team
 
-- **Lakshmi Bharathy Kumar** â€” data, metric definitions, Athena tables, planted scenarios, query tools, analyst agent
-- **Franklyn Rosario, MBA-ITM** â€” product scope, AWS architecture, acceptance testing, runner, verifier, renderer, demo
-- **Maxime Gillot** â€” team member
+- **Lakshmi Bharathy Kumar** - data, metric definitions, Athena tables, planted scenarios, query tools, analyst agent
+- **Franklyn Rosario, MBA-ITM** - product scope, AWS architecture, acceptance testing, runner, verifier, renderer, demo
+- **Maxime Gillot** - team member
 
 ## License
 
-MIT â€” see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
