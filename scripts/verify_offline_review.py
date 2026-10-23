@@ -62,6 +62,13 @@ def main():
     for name in ("connect", "connect_ex", "sendto", "sendmsg"):
         if hasattr(socket.socket, name):
             setattr(socket.socket, name, deny_network)
+    # On Windows, asyncio's event loop wakes itself through a loopback socketpair.
+    original_connect = socket._socket.socket.connect
+    def connect(sock, address):
+        if isinstance(address, tuple) and address[0] in ("127.0.0.1", "::1"):
+            return original_connect(sock, address)
+        deny_network()
+    socket.socket.connect = connect
     for name in ("create_connection", "getaddrinfo", "gethostbyname", "gethostbyname_ex"):
         setattr(socket, name, deny_network)
     os.chdir(ROOT)

@@ -27,7 +27,13 @@ COMPARE = "2018-08-06"
 def no_network(monkeypatch):
     def denied(*args, **kwargs):
         raise AssertionError("Network forbidden in period regression tests")
-    monkeypatch.setattr(socket.socket, "connect", denied)
+    original_connect = socket.socket.connect
+    def connect(sock, address):
+        # On Windows, asyncio's event loop wakes itself through a loopback socketpair.
+        if isinstance(address, tuple) and address[0] in ("127.0.0.1", "::1"):
+            return original_connect(sock, address)
+        denied()
+    monkeypatch.setattr(socket.socket, "connect", connect)
     monkeypatch.setattr(socket, "create_connection", denied)
 
 
